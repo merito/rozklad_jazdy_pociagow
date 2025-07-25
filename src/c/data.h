@@ -1,0 +1,32 @@
+#pragma once
+
+#include <pebble.h>
+
+#define EXTRACT_TUPLE(iter, key, var)                          \
+  Tuple *var##_tuple = dict_find(iter, MESSAGE_KEY_##key);     \
+  if (!var##_tuple) {                                          \
+    APP_LOG(APP_LOG_LEVEL_ERROR, "No " #key " data received"); \
+    return;                                                    \
+  }                                                            \
+  char *var = var##_tuple->value->cstring;
+
+#define EXTRACT_INT(iter, key, var)                            \
+  Tuple *var##_tuple = dict_find(iter, MESSAGE_KEY_##key);     \
+  if (!var##_tuple) {                                          \
+    APP_LOG(APP_LOG_LEVEL_ERROR, "No " #key " data received"); \
+    return;                                                    \
+  }                                                            \
+  int var = var##_tuple->value->int32;
+
+#define COPY_STRING(dest, src)          \
+  strncpy(dest, src, sizeof(dest) - 1); \
+  dest[sizeof(dest) - 1] = '\0';
+
+typedef struct DepartureEntry {
+  char trainCode[50];
+  char timestamp[10];
+  char track[3];
+  char platform[3];
+  char delay[4];
+  char arrivalStation[100];
+} DepartureEntry;

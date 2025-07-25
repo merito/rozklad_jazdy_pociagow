@@ -1,0 +1,36 @@
+{
+  "name": "rozklad_jazdy_pociagow",
+  "author": "merito",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Rozkład jazdy pociągów",
+    "uuid": "9f0ffc43-0ec1-451d-ba02-83089a7a23b7",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "count",
+      "trainCode",
+      "timestamp",
+      "track",
+      "platform",
+      "delay",
+      "arrivalStation"
+    ],
+    "resources": {
+      "media": []
+    },
+    "capabilities": ["location"]
+  }
+}
