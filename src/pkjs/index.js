@@ -1,14 +1,9 @@
-// Listen for when the watchface is opened
-Pebble.addEventListener('ready', 
-  function(e) {
-    console.log('PebbleKit JS ready!');
-  }
-);
-
 // Listen for when an AppMessage is received
 Pebble.addEventListener('appmessage',
   function(e) {
-    console.log('AppMessage received!');
+    var dict = e.payload;
+    console.log(JSON.stringify(e.payload))
+    getDepartures(dict.numerStacji)
   }                     
 );
 
@@ -21,65 +16,33 @@ var xhrRequest = function (url, type, callback) {
   xhr.send();
 };
 
-var dictionary = {
-  'trainCode': trainCode,
-  'timestamp': timestamp,
-  'track': track,
-  'platform': platform,
-  'delay': delay,
-  'arrivalStation': arrivalStation
-};
+function getDepartures(numerStacji) {
+  var url = 'https://kalkulatorkolejowy.pl/bilkom/api/departures/normal/' + numerStacji;
+  console.log(url)
 
-// Send to Pebble
-Pebble.sendAppMessage(dictionary,
-  function(e) {
-    console.log('Train info sent to Pebble successfully!');
-  },
-  function(e) {
-    console.log('Error sending train info to Pebble!');
-  }
-);
-
-function locationSuccess(pos) {
-    // Construct URL
-  var url = 'https://kalkulatorkolejowy.pl/bilkom/api/departures/normal/' +
-      pos.coords.latitude + '&lon=' + pos.coords.longitude + '&appid=' + myAPIKey;
-
-  // Send request to OpenWeatherMap
-  xhrRequest(url, 'GET', 
+  xhrRequest(url, 'GET',
     function(responseText) {
-      // responseText contains a JSON object with weather info
       var json = JSON.parse(responseText);
 
-      // Temperature in Kelvin requires adjustment
-      var temperature = Math.round(json.main.temp - 273.15);
-      console.log('Temperature is ' + temperature);
+      var departure1 = json[0]
 
-      // Conditions
-      var conditions = json.weather[0].main;      
-      console.log('Conditions are ' + conditions);
-    }      
-  );
+      var dictionary = {
+        'trainCode': departure1.trainCode,
+        'timestamp': departure1.timestamp,
+        'track': departure1.track,
+        'platform': departure1.platform,
+        'delay': departure1.delay,
+        'arrivalStation': departure1.arrivalStation
+      };
+
+      Pebble.sendAppMessage(dictionary,
+        function(e) {
+          console.log('Departure info sent to Pebble successfully!');
+        },
+        function(e) {
+          console.log('Error sending departure info to Pebble!');
+        }
+      );
+    }
+  )
 }
-
-function locationError(err) {
-  console.log('Error requesting location!');
-}
-
-function getWeather() {
-  navigator.geolocation.getCurrentPosition(
-    locationSuccess,
-    locationError,
-    {timeout: 15000, maximumAge: 60000}
-  );
-}
-
-// Listen for when the watchface is opened
-Pebble.addEventListener('ready', 
-  function(e) {
-    console.log('PebbleKit JS ready!');
-
-    // Get the initial weather
-    getWeather();
-  }
-);

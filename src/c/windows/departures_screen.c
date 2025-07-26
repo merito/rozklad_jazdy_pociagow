@@ -14,23 +14,6 @@ static Window *s_window;
 static MenuLayer *s_departures_menu_layer;
 
 static void inbox_received_callback(DictionaryIterator *iter, void *context) {
-  Tuple *count_tuple = dict_find(iter, MESSAGE_KEY_count);
-  if (!count_tuple) {
-    APP_LOG(APP_LOG_LEVEL_ERROR, "No departure data received");
-    return;
-  }
-  uint8_t count = count_tuple->value->uint8;
-
-  s_available_departures = count > MAX_DEPARTURE_COUNT ? MAX_DEPARTURE_COUNT : count;
-
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Set available departures to %d", s_available_departures);
-
-  if (s_available_departures == 0) {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "No departures received");
-    // no_departures();
-    return;
-  }
-
   EXTRACT_TUPLE(iter, trainCode, trainCode);
   EXTRACT_TUPLE(iter, timestamp, timestamp);
   EXTRACT_TUPLE(iter, track, track);
@@ -51,6 +34,8 @@ static void inbox_received_callback(DictionaryIterator *iter, void *context) {
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Received departure %d: %s, %s, %s, %s", s_departure_count, s_departures[s_departure_count - 1].trainCode,
           s_departures[s_departure_count - 1].arrivalStation, s_departures[s_departure_count - 1].timestamp,
           s_departures[s_departure_count - 1].delay);
+  
+  menu_layer_reload_data(s_departures_menu_layer);
 
   // if (s_departure_count == s_available_departures) {
   //   departures_load_complete();
@@ -91,10 +76,7 @@ static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, ui
   switch (section_index) {
     case 0:
         // Draw title text in the section header
-        menu_cell_basic_header_draw(ctx, cell_layer, "Najbliższe stacje");
-      break;
-    case 1:
-        menu_cell_basic_header_draw(ctx, cell_layer, "Extra");
+        menu_cell_basic_header_draw(ctx, cell_layer, "Najbliższy odjazd");
       break;
   }
 }
@@ -103,18 +85,15 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
   // Determine which section we're going to draw in
   switch (cell_index->section) {
     case 0:
-      // Use the row to specify which item we'll draw
-      switch (cell_index->row) {
-        case 0:
-          // This is a basic menu item with a title and subtitle
-          menu_cell_basic_draw(ctx, cell_layer, "Wrocław Główny", NULL, NULL);
-          break;
-        case 1:
-          // This is a basic menu icon with a cycling icon
-          menu_cell_basic_draw(ctx, cell_layer, "Wrocław Szczepin", NULL, NULL);
-          break;
-      }
+    {
+      char combined_text[32];
+      int index = cell_index->row;
+
+      snprintf(combined_text, sizeof(combined_text), "Dep %s - Pl.%s", s_departures[index].timestamp, s_departures[index].platform);
+
+      menu_cell_basic_draw(ctx, cell_layer, s_departures[index].arrivalStation, combined_text, NULL);
       break;
+    }
   }
 }
 
@@ -161,7 +140,7 @@ static void prv_window_unload(Window *window) {
   menu_layer_destroy(s_departures_menu_layer);
 }
 
-void departures_screen_init(char *crs, char *stationName) {
+void departures_screen_init(char *numerStacji, char *name) {
   app_message_register_inbox_received(inbox_received_callback);
   app_message_register_inbox_dropped(inbox_dropped_callback);
   app_message_register_outbox_failed(outbox_failed_callback);
@@ -171,6 +150,24 @@ void departures_screen_init(char *crs, char *stationName) {
   const int inbox_size = 128;
   const int outbox_size = 128;
   app_message_open(inbox_size, outbox_size);
+
+  DictionaryIterator *iter;
+
+  AppMessageResult result = app_message_outbox_begin(&iter);
+  if (result != APP_MSG_OK) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send data request: %d", result);
+    return;
+  }
+
+  dict_write_cstring(iter, MESSAGE_KEY_numerStacji, numerStacji);
+
+  APP_LOG(APP_LOG_LEVEL_INFO, "%s", numerStacji);
+
+  result = app_message_outbox_send();
+
+  if (result != APP_MSG_OK) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send data request outbox: %d", result);
+  }
 
   s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers) {

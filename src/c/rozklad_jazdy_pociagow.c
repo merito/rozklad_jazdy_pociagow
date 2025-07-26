@@ -6,7 +6,7 @@
 
 typedef struct Station {
   char name[100];
-  char numerStacji[7];
+  char numerStacji[8];
   char distance[9];
 } Station;
 
@@ -44,7 +44,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
   // Determine which section we're going to draw in
   switch (cell_index->section) {
     case 0:
-      menu_cell_basic_draw(ctx, cell_layer, s_stations[cell_index->row].name, s_stations[cell_index->row].distance, NULL);
+      menu_cell_basic_draw(ctx, cell_layer, s_stations[cell_index->row].name, s_stations[cell_index->row].numerStacji, NULL);
       break;
   }
 }
