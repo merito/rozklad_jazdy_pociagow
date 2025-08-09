@@ -1,39 +1,38 @@
 #include "departures_screen.h"
 #include "../data.h"
 
-#define NUM_MENU_SECTIONS 2
+#define NUM_MENU_SECTIONS 1
 #define NUM_FIRST_MENU_ITEMS 2
 #define NUM_SECOND_MENU_ITEMS 1
 
-#define MAX_DEPARTURE_COUNT 1
+#define MAX_DEPARTURE_COUNT 4
 static struct DepartureEntry s_departures[MAX_DEPARTURE_COUNT];
 static uint8_t s_departure_count = 0;
-static uint8_t s_available_departures = 0;
 
 static Window *s_window;
 static MenuLayer *s_departures_menu_layer;
 
 static void inbox_received_callback(DictionaryIterator *iter, void *context) {
-  EXTRACT_TUPLE(iter, trainCode, trainCode);
+  // EXTRACT_TUPLE(iter, trainCode, trainCode);
   EXTRACT_TUPLE(iter, timestamp, timestamp);
-  EXTRACT_TUPLE(iter, track, track);
-  EXTRACT_TUPLE(iter, platform, platform);
-  EXTRACT_TUPLE(iter, delay, delay);
+  // EXTRACT_TUPLE(iter, track, track);
+  // EXTRACT_TUPLE(iter, platform, platform);
+  // EXTRACT_TUPLE(iter, delay, delay);
   EXTRACT_TUPLE(iter, arrivalStation, arrivalStation)
 
-  COPY_STRING(s_departures[s_departure_count].trainCode, trainCode);
+  // COPY_STRING(s_departures[s_departure_count].trainCode, trainCode);
   COPY_STRING(s_departures[s_departure_count].timestamp, timestamp);
-  COPY_STRING(s_departures[s_departure_count].track, track);
-  COPY_STRING(s_departures[s_departure_count].platform, platform);
-  COPY_STRING(s_departures[s_departure_count].delay, delay);
+  // COPY_STRING(s_departures[s_departure_count].track, track);
+  // COPY_STRING(s_departures[s_departure_count].platform, platform);
+  // COPY_STRING(s_departures[s_departure_count].delay, delay);
   COPY_STRING(s_departures[s_departure_count].arrivalStation, arrivalStation);
   // to_local_time(timestamp, s_departures[s_departure_count].timestamp);
 
   s_departure_count++;
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Received departure %d: %s, %s, %s, %s", s_departure_count, s_departures[s_departure_count - 1].trainCode,
-          s_departures[s_departure_count - 1].arrivalStation, s_departures[s_departure_count - 1].timestamp,
-          s_departures[s_departure_count - 1].delay);
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "Received departure %d: %s, %s, %s, %s", s_departure_count, s_departures[s_departure_count - 1].trainCode,
+  //         s_departures[s_departure_count - 1].arrivalStation, s_departures[s_departure_count - 1].timestamp,
+  //         s_departures[s_departure_count - 1].delay);
   
   menu_layer_reload_data(s_departures_menu_layer);
 
@@ -61,7 +60,7 @@ static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data
 static uint16_t menu_get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
   switch (section_index) {
     case 0:
-      return NUM_FIRST_MENU_ITEMS;
+      return s_departure_count;
     default:
       return 0;
   }
@@ -76,7 +75,7 @@ static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, ui
   switch (section_index) {
     case 0:
         // Draw title text in the section header
-        menu_cell_basic_header_draw(ctx, cell_layer, "Najbliższy odjazd");
+        menu_cell_basic_header_draw(ctx, cell_layer, "Najbliższe odjazdy");
       break;
   }
 }
@@ -89,7 +88,11 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
       char combined_text[32];
       int index = cell_index->row;
 
-      snprintf(combined_text, sizeof(combined_text), "Dep %s - Pl.%s", s_departures[index].timestamp, s_departures[index].platform);
+      APP_LOG(APP_LOG_LEVEL_INFO, s_departures[index].timestamp);
+
+      // snprintf(combined_text, sizeof(combined_text), "Dep %s", s_departures[index].timestamp);
+
+      snprintf(combined_text, sizeof(combined_text), "%s", s_departures[index].timestamp);
 
       menu_cell_basic_draw(ctx, cell_layer, s_departures[index].arrivalStation, combined_text, NULL);
       break;
@@ -138,6 +141,7 @@ static void prv_window_load(Window *window) {
 
 static void prv_window_unload(Window *window) {
   menu_layer_destroy(s_departures_menu_layer);
+  s_departure_count = 0;
 }
 
 void departures_screen_init(char *numerStacji, char *name) {

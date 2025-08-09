@@ -24,25 +24,30 @@ function getDepartures(numerStacji) {
     function(responseText) {
       var json = JSON.parse(responseText);
 
-      var departure1 = json[0]
+      for (let i=0; i<4; i++){
+        var departure1 = json[i]
 
-      var dictionary = {
-        'trainCode': departure1.trainCode,
-        'timestamp': departure1.timestamp,
-        'track': departure1.track,
-        'platform': departure1.platform,
-        'delay': departure1.delay,
-        'arrivalStation': departure1.arrivalStation
-      };
+        var theTime = new Date(departure1.timestamp * 1000)
 
-      Pebble.sendAppMessage(dictionary,
-        function(e) {
-          console.log('Departure info sent to Pebble successfully!');
-        },
-        function(e) {
-          console.log('Error sending departure info to Pebble!');
-        }
-      );
+        var dictionary = {
+          // 'trainCode': departure1.trainCode,
+          timestamp: theTime.toTimeString(),
+          // 'track': departure1.track,
+          // 'platform': departure1.platform,
+          // 'delay': departure1.delay,
+          arrivalStation: departure1.arrivalStation
+        };
+
+        Pebble.sendAppMessage(dictionary,
+          function(e) {
+            console.log(dictionary.timestamp)
+            console.log('Departure info sent to Pebble successfully!');
+          },
+          function(e) {
+            console.log('Error sending departure info to Pebble!');
+          }
+        );
+      }
     }
   )
 }
