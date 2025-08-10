@@ -20,7 +20,11 @@
       "watchface": false
     },
     "messageKeys": [
+      "command",
+      "messageType",
+      "name",
       "numerStacji",
+      "distance",
       "count",
       "trainCode",
       "timestamp",

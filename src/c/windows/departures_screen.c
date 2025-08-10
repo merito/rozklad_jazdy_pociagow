@@ -5,53 +5,9 @@
 #define NUM_FIRST_MENU_ITEMS 2
 #define NUM_SECOND_MENU_ITEMS 1
 
-#define MAX_DEPARTURE_COUNT 4
-static struct DepartureEntry s_departures[MAX_DEPARTURE_COUNT];
 static uint8_t s_departure_count = 0;
 
 static Window *s_window;
-static MenuLayer *s_departures_menu_layer;
-
-static void inbox_received_callback(DictionaryIterator *iter, void *context) {
-  // EXTRACT_TUPLE(iter, trainCode, trainCode);
-  EXTRACT_TUPLE(iter, timestamp, timestamp);
-  EXTRACT_TUPLE(iter, track, track);
-  EXTRACT_TUPLE(iter, platform, platform);
-  EXTRACT_TUPLE(iter, delay, delay);
-  EXTRACT_TUPLE(iter, arrivalStation, arrivalStation)
-
-  // COPY_STRING(s_departures[s_departure_count].trainCode, trainCode);
-  COPY_STRING(s_departures[s_departure_count].timestamp, timestamp);
-  COPY_STRING(s_departures[s_departure_count].track, track);
-  COPY_STRING(s_departures[s_departure_count].platform, platform);
-  COPY_STRING(s_departures[s_departure_count].delay, delay);
-  COPY_STRING(s_departures[s_departure_count].arrivalStation, arrivalStation);
-  // to_local_time(timestamp, s_departures[s_departure_count].timestamp);
-
-  s_departure_count++;
-
-  // APP_LOG(APP_LOG_LEVEL_DEBUG, "Received departure %d: %s, %s, %s, %s", s_departure_count, s_departures[s_departure_count - 1].trainCode,
-  //         s_departures[s_departure_count - 1].arrivalStation, s_departures[s_departure_count - 1].timestamp,
-  //         s_departures[s_departure_count - 1].delay);
-  
-  menu_layer_reload_data(s_departures_menu_layer);
-
-  // if (s_departure_count == s_available_departures) {
-  //   departures_load_complete();
-  // }
-}
-
-static void inbox_dropped_callback(AppMessageResult reason, void *context) {
-  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
-}
-
-static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
-  APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
-}
-
-static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
-}
 
 static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
   return NUM_MENU_SECTIONS;
@@ -145,16 +101,6 @@ static void prv_window_unload(Window *window) {
 }
 
 void departures_screen_init(char *numerStacji, char *name) {
-  app_message_register_inbox_received(inbox_received_callback);
-  app_message_register_inbox_dropped(inbox_dropped_callback);
-  app_message_register_outbox_failed(outbox_failed_callback);
-  app_message_register_outbox_sent(outbox_sent_callback);
-
-  // Open AppMessage
-  const int inbox_size = 128;
-  const int outbox_size = 128;
-  app_message_open(inbox_size, outbox_size);
-
   DictionaryIterator *iter;
 
   AppMessageResult result = app_message_outbox_begin(&iter);
@@ -164,6 +110,7 @@ void departures_screen_init(char *numerStacji, char *name) {
   }
 
   dict_write_cstring(iter, MESSAGE_KEY_numerStacji, numerStacji);
+  dict_write_cstring(iter, MESSAGE_KEY_command, "departures");
 
   APP_LOG(APP_LOG_LEVEL_INFO, "%s", numerStacji);
 

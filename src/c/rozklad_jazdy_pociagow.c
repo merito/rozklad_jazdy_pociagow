@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "windows/departures_screen.h"
+#include "data.h"
 
 #define NUM_MENU_SECTIONS 1
 #define NUM_FIRST_MENU_ITEMS 1
@@ -76,6 +77,8 @@ static void prv_window_load(Window *window) {
   s_text_layer = text_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
   s_station_menu_layer = menu_layer_create(bounds);
 
+
+
   strncpy(s_stations[s_station_count].name, "Wrocław Główny", sizeof(s_stations[s_station_count].name) - 1);
   s_stations[s_station_count].name[sizeof(s_stations[s_station_count].name) - 1] = '\0';
 
@@ -106,7 +109,74 @@ static void prv_window_unload(Window *window) {
   menu_layer_destroy(s_station_menu_layer);
 }
 
+void s_depatures_callback(DictionaryIterator *iter) {
+  EXTRACT_TUPLE(iter, timestamp, timestamp);
+  EXTRACT_TUPLE(iter, track, track);
+  EXTRACT_TUPLE(iter, platform, platform);
+  EXTRACT_TUPLE(iter, delay, delay);
+  EXTRACT_TUPLE(iter, arrivalStation, arrivalStation);
+
+  // COPY_STRING(s_departures[s_departure_count].trainCode, trainCode);
+  COPY_STRING(s_departures[s_departure_count].timestamp, timestamp);
+  COPY_STRING(s_departures[s_departure_count].track, track);
+  COPY_STRING(s_departures[s_departure_count].platform, platform);
+  COPY_STRING(s_departures[s_departure_count].delay, delay);
+  COPY_STRING(s_departures[s_departure_count].arrivalStation, arrivalStation);
+  // to_local_time(timestamp, s_departures[s_departure_count].timestamp);
+
+  s_departure_count++;
+
+  // APP_LOG(APP_LOG_LEVEL_DEBUG, "Received departure %d: %s, %s, %s, %s", s_departure_count, s_departures[s_departure_count - 1].trainCode,
+  //         s_departures[s_departure_count - 1].arrivalStation, s_departures[s_departure_count - 1].timestamp,
+  //         s_departures[s_departure_count - 1].delay);
+  
+  menu_layer_reload_data(s_departures_menu_layer);
+  layer_mark_dirty(menu_layer_get_layer(s_departures_menu_layer));
+
+  // if (s_departure_count == s_available_departures) {
+  //   departures_load_complete();
+  // }
+}
+
+void s_closest_station_callback(DictionaryIterator *iter) {
+
+}
+
+static void inbox_received_callback(DictionaryIterator *iter, void *context) {
+  EXTRACT_TUPLE(iter, messageType, messageType);
+  
+  if (messageType) {
+    if (strcmp(messageType, "stationList") == 0) {
+      s_closest_station_callback(iter);
+    } else if (strcmp(messageType, "departureList") == 0) {
+      s_depatures_callback(iter);
+    }
+  }
+}
+
+static void inbox_dropped_callback(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
+}
+
+static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
+}
+
+static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
+}
+
 static void prv_init(void) {
+  app_message_register_inbox_received(inbox_received_callback);
+  app_message_register_inbox_dropped(inbox_dropped_callback);
+  app_message_register_outbox_failed(outbox_failed_callback);
+  app_message_register_outbox_sent(outbox_sent_callback);
+
+  // Open AppMessage
+  const int inbox_size = 128;
+  const int outbox_size = 128;
+  app_message_open(inbox_size, outbox_size);
+
   s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers) {
     .load = prv_window_load,

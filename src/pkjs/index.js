@@ -3,7 +3,19 @@ Pebble.addEventListener('appmessage',
   function(e) {
     var dict = e.payload;
     console.log(JSON.stringify(e.payload))
-    getDepartures(dict.numerStacji)
+
+    var command = dict.command;
+
+    switch (command) {
+      case "stationList":
+        getNearestStations();
+        break;
+      case "departures":
+        getDepartures(dict.numerStacji)
+        break;
+      default:
+        break;
+    }
   }                     
 );
 
@@ -54,4 +66,84 @@ function getDepartures(numerStacji) {
       }
     }
   )
+}
+
+import stationData from "./data/stations.json"
+
+export function findClosestStations(lat, lon, count) {
+  if (!stationData) {
+    return [];
+  }
+
+  const toRad = Math.PI / 180;
+  const earthRadiusMiles = 3958.8;
+
+  const stationsWithDistance = Object.values(stationData).map(function(station) {
+    var dLat = (station.lat - lat) * toRad;
+    var dLon = (station.lon - lon) * toRad;
+    var lat1 = lat * toRad;
+    var lat2 = station.lat * toRad;
+    var a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLon / 2), 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    var distance = earthRadiusMiles * c;
+    var distanceStr = distance.toFixed(2) + "mi";
+    var result = {};
+    for (var key in station) {
+      result[key] = station[key];
+    }
+    result.distance = distanceStr;
+    return result;
+  });
+
+  stationsWithDistance.sort(function(a, b) {
+    return parseFloat(a.distance) - parseFloat(b.distance);
+  });
+
+  return stationsWithDistance.slice(0, count);
+}
+
+function sendStationList(stations) {
+  for (let i=0; i<stations.length; i++) {
+    var dictionary = {
+      name: stations[i].name,
+      numerStacji: stations[i].numerStacji,
+      distance: stations[i].distance
+    }
+
+    Pebble.sendAppMessage(dictionary,
+      function(e) {
+        console.log(dictionary.name)
+        console.log(dictionary.numerStacji)
+        console.log(dictionary.distance)
+        console.log('Station info sent to Pebble successfully!');
+      },
+      function(e) {
+        console.log('Error sending station info to Pebble!');
+      }
+    );
+  }
+}
+
+function locationSuccess(pos) {
+  const closest = findClosestStations(
+      position.coords.latitude,
+      position.coords.longitude,
+      5
+    );
+
+    console.log("closest stations", JSON.stringify(closest));
+
+    sendStationList(closest);
+}
+
+function locationError(err) {
+  console.log('Error requesting location!');
+}
+
+function getNearestStations() {
+  navigator.geolocation.getCurrentPosition(
+    locationSuccess,
+    locationError,
+    {timeout: 15000, maximumAge: 60000}
+  );
 }
