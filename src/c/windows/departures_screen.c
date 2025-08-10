@@ -5,9 +5,12 @@
 #define NUM_FIRST_MENU_ITEMS 2
 #define NUM_SECOND_MENU_ITEMS 1
 
-static uint8_t s_departure_count = 0;
+#define MAX_DEPARTURE_COUNT 10
+struct DepartureEntry s_departures[MAX_DEPARTURE_COUNT];
+uint8_t s_departure_count = 0;
 
 static Window *s_window;
+MenuLayer *s_departures_menu_layer;
 
 static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
   return NUM_MENU_SECTIONS;

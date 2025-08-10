@@ -1,3 +1,12 @@
+const stationData = require("./stations.js");
+
+Pebble.addEventListener("ready",
+  function(e) {
+    console.log("PKJS ready, sending jsReady message");
+    getNearestStations();
+  }
+)
+
 // Listen for when an AppMessage is received
 Pebble.addEventListener('appmessage',
   function(e) {
@@ -36,7 +45,7 @@ function getDepartures(numerStacji) {
     function(responseText) {
       var json = JSON.parse(responseText);
 
-      for (let i=0; i<4; i++){
+      for (let i=0; i<Math.min(10, json.length); i++){
         var departure1 = json[i]
 
         var theTime = new Date(departure1.timestamp * 1000)
@@ -47,7 +56,8 @@ function getDepartures(numerStacji) {
           track: departure1.track,
           platform: departure1.platform,
           delay: departure1.delay,
-          arrivalStation: departure1.arrivalStation
+          arrivalStation: departure1.arrivalStation,
+          messageType: "departureList"
         };
 
         Pebble.sendAppMessage(dictionary,
@@ -68,15 +78,14 @@ function getDepartures(numerStacji) {
   )
 }
 
-import stationData from "./data/stations.json"
-
-export function findClosestStations(lat, lon, count) {
+function findClosestStations(lat, lon, count) {
+  console.log(JSON.stringify(stationData))
   if (!stationData) {
     return [];
   }
 
   const toRad = Math.PI / 180;
-  const earthRadiusMiles = 3958.8;
+  const earthRadiusKMs = 6357;
 
   const stationsWithDistance = Object.values(stationData).map(function(station) {
     var dLat = (station.lat - lat) * toRad;
@@ -85,8 +94,8 @@ export function findClosestStations(lat, lon, count) {
     var lat2 = station.lat * toRad;
     var a = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dLon / 2), 2);
     var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    var distance = earthRadiusMiles * c;
-    var distanceStr = distance.toFixed(2) + "mi";
+    var distance = earthRadiusKMs * c;
+    var distanceStr = distance.toFixed(2) + " km";
     var result = {};
     for (var key in station) {
       result[key] = station[key];
@@ -107,7 +116,8 @@ function sendStationList(stations) {
     var dictionary = {
       name: stations[i].name,
       numerStacji: stations[i].numerStacji,
-      distance: stations[i].distance
+      distance: stations[i].distance,
+      messageType: "stationList"
     }
 
     Pebble.sendAppMessage(dictionary,
@@ -126,8 +136,10 @@ function sendStationList(stations) {
 
 function locationSuccess(pos) {
   const closest = findClosestStations(
-      position.coords.latitude,
-      position.coords.longitude,
+      // position.coords.latitude,
+      // position.coords.longitude,
+      51.097916,
+      17.037951,
       5
     );
 

@@ -3,7 +3,6 @@
 #include "data.h"
 
 #define NUM_MENU_SECTIONS 1
-#define NUM_FIRST_MENU_ITEMS 1
 
 typedef struct Station {
   char name[100];
@@ -11,7 +10,7 @@ typedef struct Station {
   char distance[9];
 } Station;
 
-#define STATION_COUNT 1
+#define STATION_COUNT 5
 static struct Station s_stations[STATION_COUNT];
 static uint8_t s_station_count = 0;
 
@@ -45,7 +44,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
   // Determine which section we're going to draw in
   switch (cell_index->section) {
     case 0:
-      menu_cell_basic_draw(ctx, cell_layer, s_stations[cell_index->row].name, s_stations[cell_index->row].numerStacji, NULL);
+      menu_cell_basic_draw(ctx, cell_layer, s_stations[cell_index->row].name, s_stations[cell_index->row].distance, NULL);
       break;
   }
 }
@@ -77,18 +76,16 @@ static void prv_window_load(Window *window) {
   s_text_layer = text_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
   s_station_menu_layer = menu_layer_create(bounds);
 
+  // strncpy(s_stations[s_station_count].name, "Wrocław Główny", sizeof(s_stations[s_station_count].name) - 1);
+  // s_stations[s_station_count].name[sizeof(s_stations[s_station_count].name) - 1] = '\0';
 
+  // strncpy(s_stations[s_station_count].numerStacji, "5100069", sizeof(s_stations[s_station_count].numerStacji) - 1);
+  // s_stations[s_station_count].numerStacji[sizeof(s_stations[s_station_count].numerStacji) - 1] = '\0';
 
-  strncpy(s_stations[s_station_count].name, "Wrocław Główny", sizeof(s_stations[s_station_count].name) - 1);
-  s_stations[s_station_count].name[sizeof(s_stations[s_station_count].name) - 1] = '\0';
+  // strncpy(s_stations[s_station_count].distance, "0.0", sizeof(s_stations[s_station_count].distance) - 1);
+  // s_stations[s_station_count].distance[sizeof(s_stations[s_station_count].distance) - 1] = '\0';
 
-  strncpy(s_stations[s_station_count].numerStacji, "5100069", sizeof(s_stations[s_station_count].numerStacji) - 1);
-  s_stations[s_station_count].numerStacji[sizeof(s_stations[s_station_count].numerStacji) - 1] = '\0';
-
-  strncpy(s_stations[s_station_count].distance, "0.0", sizeof(s_stations[s_station_count].distance) - 1);
-  s_stations[s_station_count].distance[sizeof(s_stations[s_station_count].distance) - 1] = '\0';
-
-  s_station_count++;
+  // s_station_count++;
 
   menu_layer_set_callbacks(s_station_menu_layer, NULL, (MenuLayerCallbacks){
     .get_num_sections = menu_get_num_sections_callback,
@@ -131,7 +128,7 @@ void s_depatures_callback(DictionaryIterator *iter) {
   //         s_departures[s_departure_count - 1].delay);
   
   menu_layer_reload_data(s_departures_menu_layer);
-  layer_mark_dirty(menu_layer_get_layer(s_departures_menu_layer));
+  // layer_mark_dirty(menu_layer_get_layer(s_departures_menu_layer));
 
   // if (s_departure_count == s_available_departures) {
   //   departures_load_complete();
@@ -139,7 +136,18 @@ void s_depatures_callback(DictionaryIterator *iter) {
 }
 
 void s_closest_station_callback(DictionaryIterator *iter) {
+  EXTRACT_TUPLE(iter, name, name);
+  EXTRACT_TUPLE(iter, numerStacji, numerStacji);
+  EXTRACT_TUPLE(iter, distance, distance);
 
+  COPY_STRING(s_stations[s_station_count].name, name);
+  COPY_STRING(s_stations[s_station_count].numerStacji, numerStacji);
+  COPY_STRING(s_stations[s_station_count].distance, distance);
+
+  s_station_count++;
+
+  menu_layer_reload_data(s_station_menu_layer);
+  layer_mark_dirty(menu_layer_get_layer(s_station_menu_layer));
 }
 
 static void inbox_received_callback(DictionaryIterator *iter, void *context) {
@@ -173,9 +181,25 @@ static void prv_init(void) {
   app_message_register_outbox_sent(outbox_sent_callback);
 
   // Open AppMessage
-  const int inbox_size = 128;
-  const int outbox_size = 128;
+  const int inbox_size = 1280;
+  const int outbox_size = 1280;
   app_message_open(inbox_size, outbox_size);
+
+  DictionaryIterator *iter;
+
+  AppMessageResult result = app_message_outbox_begin(&iter);
+  if (result != APP_MSG_OK) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send data request: %d", result);
+    return;
+  }
+
+  dict_write_cstring(iter, MESSAGE_KEY_command, "stationList");
+
+  result = app_message_outbox_send();
+
+  if (result != APP_MSG_OK) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send data request outbox: %d", result);
+  }
 
   s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers) {
@@ -188,6 +212,7 @@ static void prv_init(void) {
 
 static void prv_deinit(void) {
   window_destroy(s_window);
+  s_station_count = 0;
 }
 
 int main(void) {
