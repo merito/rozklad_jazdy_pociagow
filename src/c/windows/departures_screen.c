@@ -15,16 +15,16 @@ static MenuLayer *s_departures_menu_layer;
 static void inbox_received_callback(DictionaryIterator *iter, void *context) {
   // EXTRACT_TUPLE(iter, trainCode, trainCode);
   EXTRACT_TUPLE(iter, timestamp, timestamp);
-  // EXTRACT_TUPLE(iter, track, track);
-  // EXTRACT_TUPLE(iter, platform, platform);
-  // EXTRACT_TUPLE(iter, delay, delay);
+  EXTRACT_TUPLE(iter, track, track);
+  EXTRACT_TUPLE(iter, platform, platform);
+  EXTRACT_TUPLE(iter, delay, delay);
   EXTRACT_TUPLE(iter, arrivalStation, arrivalStation)
 
   // COPY_STRING(s_departures[s_departure_count].trainCode, trainCode);
   COPY_STRING(s_departures[s_departure_count].timestamp, timestamp);
-  // COPY_STRING(s_departures[s_departure_count].track, track);
-  // COPY_STRING(s_departures[s_departure_count].platform, platform);
-  // COPY_STRING(s_departures[s_departure_count].delay, delay);
+  COPY_STRING(s_departures[s_departure_count].track, track);
+  COPY_STRING(s_departures[s_departure_count].platform, platform);
+  COPY_STRING(s_departures[s_departure_count].delay, delay);
   COPY_STRING(s_departures[s_departure_count].arrivalStation, arrivalStation);
   // to_local_time(timestamp, s_departures[s_departure_count].timestamp);
 
@@ -92,7 +92,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 
       // snprintf(combined_text, sizeof(combined_text), "Dep %s", s_departures[index].timestamp);
 
-      snprintf(combined_text, sizeof(combined_text), "%s", s_departures[index].timestamp);
+      snprintf(combined_text, sizeof(combined_text), "%s +%s %s/%s", s_departures[index].timestamp, s_departures[index].delay, s_departures[index].platform, s_departures[index].track);
 
       menu_cell_basic_draw(ctx, cell_layer, s_departures[index].arrivalStation, combined_text, NULL);
       break;

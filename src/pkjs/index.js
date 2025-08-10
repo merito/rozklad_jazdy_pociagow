@@ -31,16 +31,20 @@ function getDepartures(numerStacji) {
 
         var dictionary = {
           // 'trainCode': departure1.trainCode,
-          timestamp: theTime.toTimeString(),
-          // 'track': departure1.track,
-          // 'platform': departure1.platform,
-          // 'delay': departure1.delay,
+          timestamp: theTime.toTimeString().substring(0,5),
+          track: departure1.track,
+          platform: departure1.platform,
+          delay: departure1.delay,
           arrivalStation: departure1.arrivalStation
         };
 
         Pebble.sendAppMessage(dictionary,
           function(e) {
             console.log(dictionary.timestamp)
+            console.log(dictionary.track)
+            console.log(dictionary.platform)
+            console.log(dictionary.delay.toString())
+            console.log(dictionary.arrivalStation)
             console.log('Departure info sent to Pebble successfully!');
           },
           function(e) {
