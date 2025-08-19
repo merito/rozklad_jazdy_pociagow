@@ -55,7 +55,7 @@ function getDepartures(numerStacji) {
           timestamp: theTime.toTimeString().substring(0,5),
           track: departure1.track,
           platform: departure1.platform,
-          delay: departure1.delay,
+          delay: departure1.delay.toString(),
           arrivalStation: departure1.arrivalStation,
           messageType: "departureList"
         };
