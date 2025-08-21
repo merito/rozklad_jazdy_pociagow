@@ -79,7 +79,6 @@ function getDepartures(numerStacji) {
 }
 
 function findClosestStations(lat, lon, count) {
-  console.log(JSON.stringify(stationData))
   if (!stationData) {
     return [];
   }
@@ -112,7 +111,7 @@ function findClosestStations(lat, lon, count) {
 }
 
 function sendStationList(stations) {
-  for (let i=0; i<stations.length; i++) {
+  for (let i=0; i<5; i++) {
     var dictionary = {
       name: stations[i].name,
       numerStacji: stations[i].numerStacji,
@@ -136,14 +135,12 @@ function sendStationList(stations) {
 
 function locationSuccess(pos) {
   const closest = findClosestStations(
-      // position.coords.latitude,
-      // position.coords.longitude,
-      51.097916,
-      17.037951,
+      position.coords.latitude,
+      position.coords.longitude,
+      // 51.097916,
+      // 17.037951,
       5
     );
-
-    console.log("closest stations", JSON.stringify(closest));
 
     sendStationList(closest);
 }
