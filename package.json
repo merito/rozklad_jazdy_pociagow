@@ -33,7 +33,14 @@
       "arrivalStation"
     ],
     "resources": {
-      "media": []
+      "media": [
+        {
+          "menuIcon": true,
+          "type": "png",
+          "name": "APP_ICON",
+          "file": "app_icon.png"
+        }
+      ]
     },
     "capabilities": ["location"]
   }
