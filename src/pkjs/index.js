@@ -133,7 +133,7 @@ function sendStationList(stations) {
   }
 }
 
-function locationSuccess(pos) {
+function locationSuccess(position) {
   const closest = findClosestStations(
       position.coords.latitude,
       position.coords.longitude,
@@ -147,12 +147,31 @@ function locationSuccess(pos) {
 
 function locationError(err) {
   console.log('Error requesting location!');
+
+  var dictionary = {
+    name: "No location",
+    numerStacji: "0",
+    distance: "Try again later",
+    messageType: "stationList"
+  }
+
+      Pebble.sendAppMessage(dictionary,
+      function(e) {
+        console.log(dictionary.name)
+        console.log(dictionary.numerStacji)
+        console.log(dictionary.distance)
+        console.log('Station error sent to Pebble successfully!');
+      },
+      function(e) {
+        console.log('Error sending station error to Pebble!');
+      }
+    );
 }
 
 function getNearestStations() {
   navigator.geolocation.getCurrentPosition(
     locationSuccess,
     locationError,
-    {timeout: 15000, maximumAge: 60000}
+    {timeout: 30000, maximumAge: 120000}
   );
 }

@@ -55,3 +55,6 @@ analyze_mcu_flash_usage_treemap.jsonp
 .env
 
 .vscode
+docs/openapi.yaml
+scripts/railway-stations_org.json
+scripts/stations.json

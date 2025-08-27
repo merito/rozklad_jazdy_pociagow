@@ -96,6 +96,8 @@ static void prv_window_load(Window *window) {
 
   menu_layer_set_click_config_onto_window(s_departures_menu_layer, window);
   layer_add_child(window_layer, menu_layer_get_layer(s_departures_menu_layer));
+
+  menu_layer_reload_data(s_departures_menu_layer);
 }
 
 static void prv_window_unload(Window *window) {
@@ -104,23 +106,33 @@ static void prv_window_unload(Window *window) {
 }
 
 void departures_screen_init(char *numerStacji, char *name) {
-  DictionaryIterator *iter;
+  if (strcmp(numerStacji, "0") == 0) {
+    COPY_STRING(s_departures[s_departure_count].timestamp, "Go back");
+    COPY_STRING(s_departures[s_departure_count].track, "");
+    COPY_STRING(s_departures[s_departure_count].platform, "");
+    COPY_STRING(s_departures[s_departure_count].delay, "");
+    COPY_STRING(s_departures[s_departure_count].arrivalStation, "No departures");
 
-  AppMessageResult result = app_message_outbox_begin(&iter);
-  if (result != APP_MSG_OK) {
-    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send data request: %d", result);
-    return;
-  }
+    s_departure_count++;
+  } else {
+    DictionaryIterator *iter;
 
-  dict_write_cstring(iter, MESSAGE_KEY_numerStacji, numerStacji);
-  dict_write_cstring(iter, MESSAGE_KEY_command, "departures");
+    AppMessageResult result = app_message_outbox_begin(&iter);
+    if (result != APP_MSG_OK) {
+      APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send data request: %d", result);
+      return;
+    }
 
-  APP_LOG(APP_LOG_LEVEL_INFO, "%s", numerStacji);
+    dict_write_cstring(iter, MESSAGE_KEY_numerStacji, numerStacji);
+    dict_write_cstring(iter, MESSAGE_KEY_command, "departures");
 
-  result = app_message_outbox_send();
+    APP_LOG(APP_LOG_LEVEL_INFO, "%s", numerStacji);
 
-  if (result != APP_MSG_OK) {
-    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send data request outbox: %d", result);
+    result = app_message_outbox_send();
+
+    if (result != APP_MSG_OK) {
+      APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send data request outbox: %d", result);
+    }
   }
 
   s_window = window_create();

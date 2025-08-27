@@ -7,7 +7,7 @@
 typedef struct Station {
   char name[100];
   char numerStacji[8];
-  char distance[9];
+  char distance[30];
 } Station;
 
 #define STATION_COUNT 5
@@ -17,6 +17,8 @@ static uint8_t s_station_count = 0;
 static Window *s_window;
 static TextLayer *s_text_layer;
 static MenuLayer *s_station_menu_layer;
+
+static bool locationPending = true;
 
 static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
   return NUM_MENU_SECTIONS;
@@ -76,17 +78,6 @@ static void prv_window_load(Window *window) {
   s_text_layer = text_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
   s_station_menu_layer = menu_layer_create(bounds);
 
-  // strncpy(s_stations[s_station_count].name, "Wrocław Główny", sizeof(s_stations[s_station_count].name) - 1);
-  // s_stations[s_station_count].name[sizeof(s_stations[s_station_count].name) - 1] = '\0';
-
-  // strncpy(s_stations[s_station_count].numerStacji, "5100069", sizeof(s_stations[s_station_count].numerStacji) - 1);
-  // s_stations[s_station_count].numerStacji[sizeof(s_stations[s_station_count].numerStacji) - 1] = '\0';
-
-  // strncpy(s_stations[s_station_count].distance, "0.0", sizeof(s_stations[s_station_count].distance) - 1);
-  // s_stations[s_station_count].distance[sizeof(s_stations[s_station_count].distance) - 1] = '\0';
-
-  // s_station_count++;
-
   menu_layer_set_callbacks(s_station_menu_layer, NULL, (MenuLayerCallbacks){
     .get_num_sections = menu_get_num_sections_callback,
     .get_num_rows = menu_get_num_rows_callback,
@@ -99,6 +90,15 @@ static void prv_window_load(Window *window) {
 
   menu_layer_set_click_config_onto_window(s_station_menu_layer, window);
   layer_add_child(window_layer, menu_layer_get_layer(s_station_menu_layer));
+
+  COPY_STRING(s_stations[s_station_count].name, "Location pending...");
+  COPY_STRING(s_stations[s_station_count].numerStacji, "0");
+  COPY_STRING(s_stations[s_station_count].distance, "Please wait");
+
+  s_station_count++;
+
+  menu_layer_reload_data(s_station_menu_layer);
+  layer_mark_dirty(menu_layer_get_layer(s_station_menu_layer));
 }
 
 static void prv_window_unload(Window *window) {
@@ -113,29 +113,23 @@ void s_depatures_callback(DictionaryIterator *iter) {
   EXTRACT_TUPLE(iter, delay, delay);
   EXTRACT_TUPLE(iter, arrivalStation, arrivalStation);
 
-  // COPY_STRING(s_departures[s_departure_count].trainCode, trainCode);
   COPY_STRING(s_departures[s_departure_count].timestamp, timestamp);
   COPY_STRING(s_departures[s_departure_count].track, track);
   COPY_STRING(s_departures[s_departure_count].platform, platform);
   COPY_STRING(s_departures[s_departure_count].delay, delay);
   COPY_STRING(s_departures[s_departure_count].arrivalStation, arrivalStation);
-  // to_local_time(timestamp, s_departures[s_departure_count].timestamp);
 
   s_departure_count++;
 
-  // APP_LOG(APP_LOG_LEVEL_DEBUG, "Received departure %d: %s, %s, %s, %s", s_departure_count, s_departures[s_departure_count - 1].trainCode,
-  //         s_departures[s_departure_count - 1].arrivalStation, s_departures[s_departure_count - 1].timestamp,
-  //         s_departures[s_departure_count - 1].delay);
-  
   menu_layer_reload_data(s_departures_menu_layer);
-  // layer_mark_dirty(menu_layer_get_layer(s_departures_menu_layer));
-
-  // if (s_departure_count == s_available_departures) {
-  //   departures_load_complete();
-  // }
 }
 
 void s_closest_station_callback(DictionaryIterator *iter) {
+  if (locationPending) {
+    s_station_count = 0;
+    locationPending = false;
+  }
+  
   EXTRACT_TUPLE(iter, name, name);
   EXTRACT_TUPLE(iter, numerStacji, numerStacji);
   EXTRACT_TUPLE(iter, distance, distance);
@@ -184,22 +178,6 @@ static void prv_init(void) {
   const int inbox_size = 1280;
   const int outbox_size = 1280;
   app_message_open(inbox_size, outbox_size);
-
-  DictionaryIterator *iter;
-
-  AppMessageResult result = app_message_outbox_begin(&iter);
-  if (result != APP_MSG_OK) {
-    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send data request: %d", result);
-    return;
-  }
-
-  dict_write_cstring(iter, MESSAGE_KEY_command, "stationList");
-
-  result = app_message_outbox_send();
-
-  if (result != APP_MSG_OK) {
-    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send data request outbox: %d", result);
-  }
 
   s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers) {
