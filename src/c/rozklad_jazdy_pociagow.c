@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "windows/departures_screen.h"
+#include "windows/status_bar.h"
 #include "data.h"
 
 #define NUM_MENU_SECTIONS 1
@@ -10,15 +11,17 @@ typedef struct Station {
   char distance[30];
 } Station;
 
-#define STATION_COUNT 5
+#define STATION_COUNT 10
 static struct Station s_stations[STATION_COUNT];
 static uint8_t s_station_count = 0;
 
 static Window *s_window;
-static TextLayer *s_text_layer;
+CustomStatusBarLayer *custom_status_bar;
+
 static MenuLayer *s_station_menu_layer;
 
 static bool locationPending = true;
+
 
 static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
   return NUM_MENU_SECTIONS;
@@ -74,9 +77,9 @@ static int16_t get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *cell_i
 static void prv_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
-
-  s_text_layer = text_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
-  s_station_menu_layer = menu_layer_create(bounds);
+  
+  custom_status_bar = custom_status_bar_layer_create(BAR_HEIGHT, GColorBlack, ICON_WIDTH_HEIGHT);
+  s_station_menu_layer = menu_layer_create(GRect(0, BAR_HEIGHT, bounds.size.w, bounds.size.h - BAR_HEIGHT));
 
   menu_layer_set_callbacks(s_station_menu_layer, NULL, (MenuLayerCallbacks){
     .get_num_sections = menu_get_num_sections_callback,
@@ -89,6 +92,7 @@ static void prv_window_load(Window *window) {
   });
 
   menu_layer_set_click_config_onto_window(s_station_menu_layer, window);
+  layer_add_child(window_layer, custom_status_bar);
   layer_add_child(window_layer, menu_layer_get_layer(s_station_menu_layer));
 
   COPY_STRING(s_stations[s_station_count].name, "Location pending...");
@@ -102,11 +106,16 @@ static void prv_window_load(Window *window) {
 }
 
 static void prv_window_unload(Window *window) {
-  text_layer_destroy(s_text_layer);
+  custom_status_bar_layer_destroy(custom_status_bar);
   menu_layer_destroy(s_station_menu_layer);
 }
 
 void s_depatures_callback(DictionaryIterator *iter) {
+  if (departuresPending) {
+    s_departure_count = 0;
+    departuresPending = false;
+  }
+
   EXTRACT_TUPLE(iter, timestamp, timestamp);
   EXTRACT_TUPLE(iter, track, track);
   EXTRACT_TUPLE(iter, platform, platform);
@@ -186,6 +195,10 @@ static void prv_init(void) {
   });
   const bool animated = true;
   window_stack_push(s_window, animated);
+
+  update_time();
+  // Register with TickTimerService
+  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
 }
 
 static void prv_deinit(void) {

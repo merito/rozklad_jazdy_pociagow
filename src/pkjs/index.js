@@ -111,7 +111,7 @@ function findClosestStations(lat, lon, count) {
 }
 
 function sendStationList(stations) {
-  for (let i=0; i<5; i++) {
+  for (let i=0; i<10; i++) {
     var dictionary = {
       name: stations[i].name,
       numerStacji: stations[i].numerStacji,
@@ -139,7 +139,7 @@ function locationSuccess(position) {
       position.coords.longitude,
       // 51.097916,
       // 17.037951,
-      5
+      10
     );
 
     sendStationList(closest);
