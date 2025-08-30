@@ -116,12 +116,14 @@ void s_depatures_callback(DictionaryIterator *iter) {
     departuresPending = false;
   }
 
+  EXTRACT_TUPLE(iter, trainCode, trainCode);
   EXTRACT_TUPLE(iter, timestamp, timestamp);
   EXTRACT_TUPLE(iter, track, track);
   EXTRACT_TUPLE(iter, platform, platform);
   EXTRACT_TUPLE(iter, delay, delay);
   EXTRACT_TUPLE(iter, arrivalStation, arrivalStation);
 
+  COPY_STRING(s_departures[s_departure_count].trainCode, trainCode);
   COPY_STRING(s_departures[s_departure_count].timestamp, timestamp);
   COPY_STRING(s_departures[s_departure_count].track, track);
   COPY_STRING(s_departures[s_departure_count].platform, platform);

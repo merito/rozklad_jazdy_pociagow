@@ -55,9 +55,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 
       APP_LOG(APP_LOG_LEVEL_INFO, s_departures[index].timestamp);
 
-      // snprintf(combined_text, sizeof(combined_text), "Dep %s", s_departures[index].timestamp);
-
-      snprintf(combined_text, sizeof(combined_text), "%s +%s %s/%s", s_departures[index].timestamp, s_departures[index].delay, s_departures[index].platform, s_departures[index].track);
+      snprintf(combined_text, sizeof(combined_text), "%s +%s %s/%s %s", s_departures[index].timestamp, s_departures[index].delay, s_departures[index].platform, s_departures[index].track, s_departures[index].trainCode);
 
       menu_cell_basic_draw(ctx, cell_layer, s_departures[index].arrivalStation, combined_text, NULL);
       break;
@@ -107,6 +105,7 @@ static void prv_window_load(Window *window) {
   layer_add_child(window_layer, custom_status_bar);
   layer_add_child(window_layer, menu_layer_get_layer(s_departures_menu_layer));
 
+  COPY_STRING(s_departures[s_departure_count].trainCode, "-");
   COPY_STRING(s_departures[s_departure_count].timestamp, "Please wait");
   COPY_STRING(s_departures[s_departure_count].track, "-");
   COPY_STRING(s_departures[s_departure_count].platform, "-");
@@ -126,6 +125,7 @@ static void prv_window_unload(Window *window) {
 
 void departures_screen_init(char *numerStacji, char *name) {
   if (strcmp(numerStacji, "0") == 0) {
+    COPY_STRING(s_departures[s_departure_count].trainCode, "-");
     COPY_STRING(s_departures[s_departure_count].timestamp, "Go back");
     COPY_STRING(s_departures[s_departure_count].track, "-");
     COPY_STRING(s_departures[s_departure_count].platform, "-");

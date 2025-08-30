@@ -51,7 +51,7 @@ function getDepartures(numerStacji) {
         var theTime = new Date(departure1.timestamp * 1000)
 
         var dictionary = {
-          // 'trainCode': departure1.trainCode,
+          trainCode: departure1.trainCode,
           timestamp: theTime.toTimeString().substring(0,5),
           track: departure1.track,
           platform: departure1.platform,
@@ -62,6 +62,7 @@ function getDepartures(numerStacji) {
 
         Pebble.sendAppMessage(dictionary,
           function(e) {
+            console.log(dictionary.trainCode)
             console.log(dictionary.timestamp)
             console.log(dictionary.track)
             console.log(dictionary.platform)
