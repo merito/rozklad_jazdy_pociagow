@@ -25,8 +25,8 @@
 typedef struct DepartureEntry {
   char trainCode[50];
   char timestamp[30];
-  char track[3];
-  char platform[3];
-  char delay[4];
+  char track[10];
+  char platform[10];
+  char delay[10];
   char arrivalStation[100];
 } DepartureEntry;
