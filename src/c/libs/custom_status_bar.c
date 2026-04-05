@@ -1,12 +1,12 @@
 #include "custom_status_bar.h"
 #include "pebble.h"
 
-#ifndef PEBBLE_HEIGHT
-#define PEBBLE_HEIGHT 168
-#endif
-
-#ifndef PEBBLE_WIDTH
+#ifdef PBL_PLATFORM_EMERY
+#define PEBBLE_WIDTH 200
+#define PEBBLE_HEIGHT 228
+#else
 #define PEBBLE_WIDTH 144
+#define PEBBLE_HEIGHT 168
 #endif
 
 typedef struct {
@@ -100,7 +100,7 @@ void custom_status_bar_layer_set_text(CustomStatusBarLayer* custom_status_bar_la
         case CSB_TEXT_LEFT:
         if(status_hidden->left_text == NULL){
             status_hidden->left_text = text_layer_create(GRect(0, 0, PEBBLE_WIDTH, status_hidden->height));
-            text_layer_set_text_alignment(status_hidden->left_text, GAlignLeft);
+            text_layer_set_text_alignment(status_hidden->left_text, GTextAlignmentLeft);
             text_layer_set_font(status_hidden->left_text, fonts_get_system_font(FONT_KEY_GOTHIC_18));
             text_layer_set_text_color(status_hidden->left_text, status_hidden->text_colour);
             text_layer_set_background_color(status_hidden->left_text, GColorClear);
@@ -112,7 +112,7 @@ void custom_status_bar_layer_set_text(CustomStatusBarLayer* custom_status_bar_la
         case CSB_TEXT_RIGHT:
         if(status_hidden->right_text == NULL){
             status_hidden->right_text = text_layer_create(GRect(0, 0, PEBBLE_WIDTH, status_hidden->height));
-            text_layer_set_text_alignment(status_hidden->right_text, GAlignRight);
+            text_layer_set_text_alignment(status_hidden->right_text, GTextAlignmentRight);
             text_layer_set_font(status_hidden->right_text, fonts_get_system_font(FONT_KEY_GOTHIC_18));
             text_layer_set_text_color(status_hidden->right_text, status_hidden->text_colour);
             text_layer_set_background_color(status_hidden->right_text, GColorClear);
@@ -125,7 +125,11 @@ void custom_status_bar_layer_set_text(CustomStatusBarLayer* custom_status_bar_la
         if(status_hidden->center_text == NULL){  
             status_hidden->center_text = text_layer_create(GRect(0, 0, PEBBLE_WIDTH, status_hidden->height));
             text_layer_set_text_alignment(status_hidden->center_text, GTextAlignmentCenter);
+#ifdef PBL_PLATFORM_EMERY
+            text_layer_set_font(status_hidden->center_text, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+#else
             text_layer_set_font(status_hidden->center_text, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+#endif
             text_layer_set_text_color(status_hidden->center_text, status_hidden->text_colour);
             text_layer_set_background_color(status_hidden->center_text, GColorClear);
             layer_add_child(custom_status_bar_layer, text_layer_get_layer(status_hidden->center_text));
