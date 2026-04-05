@@ -14,7 +14,8 @@
       "aplite",
       "basalt",
       "diorite",
-      "emery"
+      "emery",
+      "flint"
     ],
     "watchapp": {
       "watchface": false
