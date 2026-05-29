@@ -159,7 +159,8 @@ const stationData = [
         "name": "Białystok",
         "numerStacji": "5100002",
         "lat": "53.133889",
-        "lon": "23.135834"
+        "lon": "23.135834",
+        "category": "premium"
     },
     {
         "name": "Brzeg",
@@ -177,7 +178,8 @@ const stationData = [
         "name": "Bydgoszcz Główna",
         "numerStacji": "5100005",
         "lat": "53.135274",
-        "lon": "17.991388"
+        "lon": "17.991388",
+        "category": "premium"
     },
     {
         "name": "Bytom",
@@ -189,7 +191,8 @@ const stationData = [
         "name": "Częstochowa",
         "numerStacji": "5100007",
         "lat": "50.808614",
-        "lon": "19.121108"
+        "lon": "19.121108",
+        "category": "premium"
     },
     {
         "name": "Duszniki-Zdrój",
@@ -201,19 +204,22 @@ const stationData = [
         "name": "Gdańsk Główny",
         "numerStacji": "5100009",
         "lat": "54.355829",
-        "lon": "18.644167"
+        "lon": "18.644167",
+        "category": "premium"
     },
     {
         "name": "Gdynia Główna",
         "numerStacji": "5100010",
         "lat": "54.520835",
-        "lon": "18.529168"
+        "lon": "18.529168",
+        "category": "premium"
     },
     {
         "name": "Gliwice",
         "numerStacji": "5100011",
         "lat": "50.30111",
-        "lon": "18.676942"
+        "lon": "18.676942",
+        "category": "premium"
     },
     {
         "name": "Gniezno",
@@ -237,7 +243,8 @@ const stationData = [
         "name": "Kalisz",
         "numerStacji": "5100017",
         "lat": "51.742782",
-        "lon": "18.071392"
+        "lon": "18.071392",
+        "category": "premium"
     },
     {
         "name": "Kamieniec Ząbkowicki",
@@ -249,13 +256,15 @@ const stationData = [
         "name": "Katowice",
         "numerStacji": "5100020",
         "lat": "50.257503",
-        "lon": "19.017219"
+        "lon": "19.017219",
+        "category": "premium"
     },
     {
-        "name": "Kielce",
+        "name": "Kielce Główne",
         "numerStacji": "5100022",
         "lat": "50.874163",
-        "lon": "20.618054"
+        "lon": "20.618054",
+        "category": "premium"
     },
     {
         "name": "Kępno",
@@ -291,7 +300,8 @@ const stationData = [
         "name": "Kraków Główny",
         "numerStacji": "5100028",
         "lat": "50.065835",
-        "lon": "19.947774"
+        "lon": "19.947774",
+        "category": "premium"
     },
     {
         "name": "Krynica-Zdrój",
@@ -327,7 +337,8 @@ const stationData = [
         "name": "Legnica",
         "numerStacji": "5100035",
         "lat": "51.213614",
-        "lon": "16.168052"
+        "lon": "16.168052",
+        "category": "premium"
     },
     {
         "name": "Leszno",
@@ -336,16 +347,18 @@ const stationData = [
         "lon": "16.565277"
     },
     {
-        "name": "Lublin",
+        "name": "Lublin Główny",
         "numerStacji": "5100037",
         "lat": "51.231385",
-        "lon": "22.568893"
+        "lon": "22.568893",
+        "category": "premium"
     },
     {
         "name": "Łódź Kaliska",
         "numerStacji": "5100039",
         "lat": "51.758054",
-        "lon": "19.430004"
+        "lon": "19.430004",
+        "category": "premium"
     },
     {
         "name": "Malbork",
@@ -381,13 +394,15 @@ const stationData = [
         "name": "Olsztyn Główny",
         "numerStacji": "5100045",
         "lat": "53.785832",
-        "lon": "20.497221"
+        "lon": "20.497221",
+        "category": "premium"
     },
     {
         "name": "Opole Główne",
         "numerStacji": "5100046",
         "lat": "50.661946",
-        "lon": "17.926945"
+        "lon": "17.926945",
+        "category": "premium"
     },
     {
         "name": "Ostrów Wielkopolski",
@@ -420,10 +435,11 @@ const stationData = [
         "lon": "17.578613"
     },
     {
-        "name": "Radom",
+        "name": "Radom Główny",
         "numerStacji": "5100052",
         "lat": "51.390836",
-        "lon": "21.155277"
+        "lon": "21.155277",
+        "category": "premium"
     },
     {
         "name": "Siedlce",
@@ -441,7 +457,8 @@ const stationData = [
         "name": "Słupsk",
         "numerStacji": "5100055",
         "lat": "54.467223",
-        "lon": "17.01667"
+        "lon": "17.01667",
+        "category": "premium"
     },
     {
         "name": "Sopot",
@@ -453,7 +470,8 @@ const stationData = [
         "name": "Szczecin Główny",
         "numerStacji": "5100057",
         "lat": "53.419719",
-        "lon": "14.551945"
+        "lon": "14.551945",
+        "category": "premium"
     },
     {
         "name": "Szklarska Poręba Górna",
@@ -489,25 +507,29 @@ const stationData = [
         "name": "Wałbrzych Główny",
         "numerStacji": "5100064",
         "lat": "50.743334",
-        "lon": "16.281667"
+        "lon": "16.281667",
+        "category": "premium"
     },
     {
         "name": "Warszawa Centralna",
         "numerStacji": "5100065",
         "lat": "52.228613",
-        "lon": "21.002775"
+        "lon": "21.002775",
+        "category": "premium"
     },
     {
         "name": "Warszawa Wschodnia",
         "numerStacji": "5100066",
         "lat": "52.2515246",
-        "lon": "20.9821647"
+        "lon": "20.9821647",
+        "category": "premium"
     },
     {
         "name": "Warszawa Zachodnia",
         "numerStacji": "5100067",
         "lat": "52.220001",
-        "lon": "20.965281"
+        "lon": "20.965281",
+        "category": "premium"
     },
     {
         "name": "Węgliniec",
@@ -519,7 +541,8 @@ const stationData = [
         "name": "Wrocław Główny",
         "numerStacji": "5100069",
         "lat": "51.098057",
-        "lon": "17.036392"
+        "lon": "17.036392",
+        "category": "premium"
     },
     {
         "name": "Zabrze",
@@ -591,7 +614,8 @@ const stationData = [
         "name": "Poznań Główny",
         "numerStacji": "5100081",
         "lat": "52.401385",
-        "lon": "16.911667"
+        "lon": "16.911667",
+        "category": "premium"
     },
     {
         "name": "Rzepin",
@@ -705,7 +729,8 @@ const stationData = [
         "name": "Sosnowiec Główny",
         "numerStacji": "5100133",
         "lat": "50.278888",
-        "lon": "19.126115"
+        "lon": "19.126115",
+        "category": "premium"
     },
     {
         "name": "Stare Bielice",
@@ -1122,10 +1147,11 @@ const stationData = [
         "lon": "14.832219"
     },
     {
-        "name": "Zielona Góra",
+        "name": "Zielona Góra Główna",
         "numerStacji": "5100222",
         "lat": "51.947502",
-        "lon": "15.514168"
+        "lon": "15.514168",
+        "category": "premium"
     },
     {
         "name": "Ostrzeszów",
@@ -1167,13 +1193,15 @@ const stationData = [
         "name": "Rzeszów Główny",
         "numerStacji": "5100229",
         "lat": "50.043056",
-        "lon": "22.006663"
+        "lon": "22.006663",
+        "category": "premium"
     },
     {
         "name": "Tarnów",
         "numerStacji": "5100230",
         "lat": "50.005275",
-        "lon": "20.974441"
+        "lon": "20.974441",
+        "category": "premium"
     },
     {
         "name": "Zduńska Wola",
@@ -1281,7 +1309,8 @@ const stationData = [
         "name": "Dąbrowa Górnicza",
         "numerStacji": "5100250",
         "lat": "50.33028",
-        "lon": "19.185282"
+        "lon": "19.185282",
+        "category": "premium"
     },
     {
         "name": "Czechowice-Dziedzice",
@@ -1497,19 +1526,22 @@ const stationData = [
         "name": "Włocławek",
         "numerStacji": "5100315",
         "lat": "52.653056",
-        "lon": "19.059163"
+        "lon": "19.059163",
+        "category": "premium"
     },
     {
         "name": "Bielsko-Biała Główna",
         "numerStacji": "5100316",
         "lat": "49.829724",
-        "lon": "19.045275"
+        "lon": "19.045275",
+        "category": "premium"
     },
     {
         "name": "Łódź Fabryczna",
         "numerStacji": "5100317",
         "lat": "51.769165",
-        "lon": "19.467777"
+        "lon": "19.467777",
+        "category": "premium"
     },
     {
         "name": "Będów",
@@ -15011,6 +15043,6 @@ const stationData = [
         "lat": "50.040836",
         "lon": "19.958893"
     }
-]
+];
 
 module.exports = stationData;

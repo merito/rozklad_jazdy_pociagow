@@ -32,7 +32,8 @@
       "track",
       "platform",
       "delay",
-      "arrivalStation"
+      "arrivalStation",
+      "category"
     ],
     "resources": {
       "media": [

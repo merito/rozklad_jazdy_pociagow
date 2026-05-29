@@ -53,6 +53,9 @@ analyze_mcu_flash_usage_treemap.jsonp
 **/CMakeLists.txt
 
 .env
+backend/.env
+backend/venv
+backend/app/__pycache__
 
 .vscode
 docs/openapi.yaml
