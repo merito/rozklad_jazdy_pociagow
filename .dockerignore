@@ -1,0 +1,17 @@
+.git/
+.gitignore
+node_modules/
+build/
+resources/
+scripts/
+docs/
+xcode/
+**.md
+*.bin
+*.o
+*.map
+*.elf
+*.swp
+backend/venv/
+backend/.env
+backend/root@*

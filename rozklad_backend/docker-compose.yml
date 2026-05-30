@@ -1,6 +1,8 @@
 services:
   backend:
-    build: .
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
     container_name: rozklad-backend
     ports:
       - "30190:8000"
