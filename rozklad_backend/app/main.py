@@ -215,7 +215,7 @@ async def get_departures(numer_stacji: str):
             "arrivalStation": arrival_station,
         })
 
-    departures.sort(key=lambda d: d["timestamp"] + d["delay"] * 60)
+    departures.sort(key=lambda d: d["timestamp"])
 
     return JSONResponse(content=departures)
 
