@@ -8,3 +8,4 @@ services:
       - "30190:8000"
     env_file:
       - .env
+    command: uvicorn app.main:app --host [::] --port 8000 --reload
