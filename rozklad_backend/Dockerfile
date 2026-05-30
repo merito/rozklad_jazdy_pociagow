@@ -11,4 +11,4 @@ COPY src/pkjs/stations.js /src/pkjs/stations.js
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "[::]", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "::", "--port", "8000"]
