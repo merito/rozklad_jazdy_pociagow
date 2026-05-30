@@ -1,0 +1,8 @@
+services:
+  backend:
+    build: .
+    container_name: rozklad-backend
+    ports:
+      - "30190:8000"
+    env_file:
+      - .env
