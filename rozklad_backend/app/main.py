@@ -239,7 +239,9 @@ async def get_departures(numer_stacji: str):
                 "calculatedTime": calculated_ts,
             })
 
-    departures.sort(key=lambda d: d["calculatedTime"])
+    # Match the old Bilkom API: order by the published timetable time,
+    # regardless of each train's current delay.
+    departures.sort(key=lambda d: d["timestamp"])
 
     return JSONResponse(content=departures[:MAX_DEPARTURES])
 
