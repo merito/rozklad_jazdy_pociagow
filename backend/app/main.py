@@ -1,7 +1,8 @@
 import logging
 import re
-from datetime import date, datetime, timezone
+from datetime import datetime, timedelta, timezone
 from contextlib import asynccontextmanager
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
@@ -47,37 +48,51 @@ app = FastAPI(
 )
 
 
-def _duration_to_seconds(duration_str: str | None) -> int | None:
-    if not duration_str:
+# PDP schedule/operation times are naive local times (Europe/Warsaw)
+WARSAW_TZ = ZoneInfo("Europe/Warsaw")
+
+# how far ahead departures are returned
+MAX_LOOKAHEAD = timedelta(hours=24)
+# a departure stays visible briefly after its (delayed) departure time
+PAST_GRACE_SECONDS = 120
+# max number of departures returned, like the old bilkom API
+MAX_DEPARTURES = 60
+
+
+def _time_to_seconds(time_str: str | None) -> int | None:
+    """Parse 'HH:MM[:SS]' (hours may exceed 23) to seconds since midnight."""
+    if not time_str:
         return None
+    m = re.match(r"(\d{1,3}):(\d{2})(?::(\d{2}))?", time_str)
+    if not m:
+        return None
+    hours = int(m.group(1))
+    minutes = int(m.group(2))
+    seconds = int(m.group(3) or 0)
+    return hours * 3600 + minutes * 60 + seconds
 
-    iso_patterns = [
-        (r"PT(\d+)H(\d+)M(\d+(?:\.\d+)?)S", True),
-        (r"PT(\d+)H(\d+)M", True),
-        (r"PT(\d+)M", False),
-        (r"PT(\d+)H", True),
-    ]
-    for pat, has_hours in iso_patterns:
-        m = re.match(pat, duration_str)
-        if m:
-            if has_hours and m.lastindex and m.lastindex >= 2:
-                hours = int(m.group(1))
-                minutes = int(m.group(2))
-            elif has_hours:
-                hours = int(m.group(1))
-                minutes = 0
-            else:
-                hours = 0
-                minutes = int(m.group(1))
-            return hours * 3600 + minutes * 60
 
-    clock_m = re.match(r"(\d{1,2}):(\d{2})(?::(\d{2}))?", duration_str)
-    if clock_m:
-        hours = int(clock_m.group(1))
-        minutes = int(clock_m.group(2))
-        return hours * 3600 + minutes * 60
+def _local_epoch(date_str: str, day_offset: int, seconds: int) -> int:
+    """Epoch of a PDP local time: operating date + day offset + time of day."""
+    year, month, day = (int(part) for part in date_str.split("-"))
+    naive = datetime(year, month, day) + timedelta(
+        days=day_offset, seconds=seconds,
+    )
+    return int(naive.replace(tzinfo=WARSAW_TZ).timestamp())
 
-    return None
+
+def _train_code(route: dict, station_entry: dict) -> str:
+    carrier = route.get("cc") or ""
+    category = (route.get("ccs") or "").split("/")[0]
+    # PKP Intercity and Polregio are displayed by category (EIP/TLK/IR...),
+    # other carriers by carrier code (KM, KD, SKW...), like the old API
+    prefix = category if carrier in ("IC", "PR") and category else carrier
+    number = station_entry.get("dtn") or route.get("nn") or ""
+    if carrier == "IC":
+        # international trains are known by their international number
+        # (e.g. "262" BALTIC EXPRESS, not the national 65002)
+        number = route.get("ian") or route.get("idn") or number
+    return f"{prefix} {number}".strip()
 
 
 def _get_station_in_route(
@@ -89,16 +104,30 @@ def _get_station_in_route(
     return None
 
 
-def _get_operation_at_station(
-    operations: list[dict], schedule_id: int, order_id: int, pdp_station_id: int,
-) -> dict | None:
+def _build_operations_index(
+    operations: list[dict], pdp_station_id: int,
+) -> dict[tuple, dict]:
+    """Index operation data by (scheduleId, orderId, operatingDate).
+
+    The same schedule/order pair is reported separately for each operating
+    date, so the date must be part of the key to avoid applying yesterday's
+    delay to today's train.
+    """
+    index: dict[tuple, dict] = {}
     for op in operations:
-        if op.get("sid") == schedule_id and op.get("oid") == order_id:
-            op_stations = op.get("st") or []
-            for ost in op_stations:
-                if ost.get("id") == pdp_station_id:
-                    return ost
-    return None
+        train_status = op.get("s") or ""
+        for ost in op.get("st") or []:
+            if ost.get("id") != pdp_station_id:
+                continue
+            delay = ost.get("ddm")
+            if delay is None:
+                delay = ost.get("adm")
+            index[(op.get("sid"), op.get("oid"), op.get("od"))] = {
+                # cn = isCancelled at this station, X = whole train cancelled
+                "cancelled": bool(ost.get("cn")) or train_status == "X",
+                "delay": delay or 0,
+            }
+    return index
 
 
 def _get_arrival_station_name(
@@ -134,9 +163,8 @@ async def get_departures(numer_stacji: str):
             ),
         )
 
-    from datetime import timedelta
-
-    today = date.today()
+    # PDP operating dates follow the local (Europe/Warsaw) timetable day
+    today = datetime.now(WARSAW_TZ).date()
     date_from = (today - timedelta(days=1)).isoformat()
     date_to = (today + timedelta(days=1)).isoformat()
     pdp_ids = [pdp_id]
@@ -151,6 +179,9 @@ async def get_departures(numer_stacji: str):
             detail=f"Failed to fetch data from PDP API: {e}",
         )
 
+    operations_index = _build_operations_index(operations, pdp_id)
+    now_ts = int(datetime.now(timezone.utc).timestamp())
+
     departures = []
     seen = set()
 
@@ -161,63 +192,56 @@ async def get_departures(numer_stacji: str):
         if not station_entry:
             continue
 
-        dep_time = station_entry.get("dtm")
-        if not dep_time:
+        dep_secs = _time_to_seconds(station_entry.get("dtm"))
+        if dep_secs is None:
             continue
 
-        schedule_id = route.get("sid")
-        order_id = route.get("oid")
-        carrier = route.get("cc") or ""
-        number = route.get("nn") or route.get("nm") or ""
-        train_code = f"{carrier} {number}".strip()
-
+        train_code = _train_code(route, station_entry)
         if not train_code:
             continue
 
-        key = (schedule_id, order_id, train_code)
-        if key in seen:
-            continue
-        seen.add(key)
-
         platform = station_entry.get("dpl") or station_entry.get("apl") or ""
         track = station_entry.get("dtr") or station_entry.get("atr") or ""
-
-        duration_secs = _duration_to_seconds(dep_time)
-        today_d = date.today()
-        ts = int(
-            datetime(
-                today_d.year, today_d.month, today_d.day,
-                tzinfo=timezone.utc,
-            ).timestamp() + (duration_secs or 0)
-        )
-
-        op_match = _get_operation_at_station(
-            operations, schedule_id, order_id, pdp_id,
-        )
-        delay = 0
-        if op_match:
-            delay = op_match.get("ddm") or op_match.get("adm") or 0
-
+        day_offset = station_entry.get("ddy") or 0
         arrival_station = _get_arrival_station_name(route_stations)
 
-        departure_time_actual = ts + delay * 60
-        now_ts = int(datetime.now(timezone.utc).timestamp())
+        # a route operates on every date listed in "od"
+        for operating_date in route.get("od") or []:
+            ts = _local_epoch(operating_date, day_offset, dep_secs)
+            if ts > now_ts + MAX_LOOKAHEAD.total_seconds():
+                continue
 
-        if departure_time_actual < now_ts:
-            continue
+            op = operations_index.get(
+                (route.get("sid"), route.get("oid"), operating_date),
+            )
+            if op and op["cancelled"]:
+                continue
+            delay = op["delay"] if op else 0
 
-        departures.append({
-            "trainCode": train_code,
-            "timestamp": ts,
-            "track": track,
-            "platform": platform,
-            "delay": delay,
-            "arrivalStation": arrival_station,
-        })
+            calculated_ts = ts + delay * 60
+            if calculated_ts < now_ts - PAST_GRACE_SECONDS:
+                continue
 
-    departures.sort(key=lambda d: d["timestamp"] + d["delay"] * 60)
+            # split trains (portions to different termini) share the
+            # departure time at this station - report them once
+            key = (train_code, ts)
+            if key in seen:
+                continue
+            seen.add(key)
 
-    return JSONResponse(content=departures)
+            departures.append({
+                "trainCode": train_code,
+                "timestamp": ts,
+                "track": track,
+                "platform": platform,
+                "delay": delay,
+                "arrivalStation": arrival_station,
+                "calculatedTime": calculated_ts,
+            })
+
+    departures.sort(key=lambda d: d["calculatedTime"])
+
+    return JSONResponse(content=departures[:MAX_DEPARTURES])
 
 
 @app.get("/api/health")

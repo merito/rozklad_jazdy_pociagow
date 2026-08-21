@@ -18,7 +18,7 @@ class PDPClient:
             self._client = httpx.AsyncClient(
                 base_url=self.base_url,
                 headers=self.headers,
-                timeout=30.0,
+                timeout=60.0,
             )
         return self._client
 
@@ -67,8 +67,14 @@ class PDPClient:
             trains = data.get("tr") or []
             all_trains.extend(trains)
 
+            # shortened pagination fields: hn=hasNextPage, p=page, tp=totalPages
             pg = data.get("pg") or {}
-            if not pg.get("hasNextPage"):
+            has_next = pg.get("hn")
+            if has_next is None:
+                has_next = pg.get("hasNextPage")
+            if has_next is None:
+                has_next = page < (pg.get("tp") or pg.get("totalPages") or 1)
+            if not has_next:
                 break
             page += 1
 

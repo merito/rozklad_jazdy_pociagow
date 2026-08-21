@@ -28,55 +28,115 @@ Pebble.addEventListener('appmessage',
   }                     
 );
 
-var xhrRequest = function (url, type, callback) {
+// New backend (PDP API) is primary, old kalkulatorkolejowy.pl API is fallback
+var BACKEND_URL = 'http://localhost:8000';
+var OLD_API_URL = 'https://kalkulatorkolejowy.pl';
+
+// GET JSON array from url, call onError on network error, bad status
+// or a response that is not a JSON array
+var xhrJsonArray = function (url, onSuccess, onError) {
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
-    callback(this.responseText);
+    if (this.status >= 200 && this.status < 300) {
+      try {
+        var json = JSON.parse(this.responseText);
+        if (json && typeof json.length === 'number') {
+          onSuccess(json);
+          return;
+        }
+      } catch (e) {
+        console.log('Invalid JSON from ' + url + ': ' + e);
+      }
+    } else {
+      console.log('HTTP ' + this.status + ' from ' + url);
+    }
+    onError();
   };
-  xhr.open(type, url);
+  xhr.onerror = function () {
+    console.log('Request failed: ' + url);
+    onError();
+  };
+  try {
+    xhr.timeout = 15000;
+    xhr.ontimeout = function () {
+      console.log('Request timed out: ' + url);
+      onError();
+    };
+  } catch (e) {}
+  xhr.open('GET', url);
   xhr.send();
 };
 
-function getDepartures(numerStacji) {
-  var url = 'https://kalkulatorkolejowy.pl/bilkom/api/departures/normal/' + numerStacji;
-  console.log(url)
+function sendNoDepartures() {
+  var dictionary = {
+    trainCode: "-",
+    timestamp: "",
+    track: "-",
+    platform: "-",
+    delay: "-",
+    arrivalStation: "No departures",
+    messageType: "departureList"
+  };
 
-  xhrRequest(url, 'GET',
-    function(responseText) {
-      var json = JSON.parse(responseText);
-
-      for (let i=0; i<Math.min(10, json.length); i++){
-        var departure1 = json[i]
-
-        var theTime = new Date(departure1.timestamp * 1000)
-
-        var dictionary = {
-          trainCode: departure1.trainCode,
-          timestamp: theTime.toTimeString().substring(0,5),
-          track: departure1.track,
-          platform: departure1.platform,
-          delay: departure1.delay.toString(),
-          arrivalStation: departure1.arrivalStation,
-          messageType: "departureList"
-        };
-
-        Pebble.sendAppMessage(dictionary,
-          function(e) {
-            console.log(dictionary.trainCode)
-            console.log(dictionary.timestamp)
-            console.log(dictionary.track)
-            console.log(dictionary.platform)
-            console.log(dictionary.delay.toString())
-            console.log(dictionary.arrivalStation)
-            console.log('Departure info sent to Pebble successfully!');
-          },
-          function(e) {
-            console.log('Error sending departure info to Pebble!');
-          }
-        );
-      }
+  Pebble.sendAppMessage(dictionary,
+    function(e) {
+      console.log('No-departures info sent to Pebble successfully!');
+    },
+    function(e) {
+      console.log('Error sending no-departures info to Pebble!');
     }
-  )
+  );
+}
+
+function sendDepartures(json) {
+  if (json.length === 0) {
+    sendNoDepartures();
+    return;
+  }
+
+  for (let i=0; i<Math.min(10, json.length); i++){
+    var departure1 = json[i]
+
+    var theTime = new Date(departure1.timestamp * 1000)
+
+    var dictionary = {
+      trainCode: departure1.trainCode,
+      timestamp: theTime.toTimeString().substring(0,5),
+      track: departure1.track,
+      platform: departure1.platform,
+      delay: departure1.delay.toString(),
+      arrivalStation: departure1.arrivalStation,
+      messageType: "departureList"
+    };
+
+    Pebble.sendAppMessage(dictionary,
+      function(e) {
+        console.log(dictionary.trainCode)
+        console.log(dictionary.timestamp)
+        console.log(dictionary.track)
+        console.log(dictionary.platform)
+        console.log(dictionary.delay.toString())
+        console.log(dictionary.arrivalStation)
+        console.log('Departure info sent to Pebble successfully!');
+      },
+      function(e) {
+        console.log('Error sending departure info to Pebble!');
+      }
+    );
+  }
+}
+
+function getDepartures(numerStacji) {
+  var newUrl = BACKEND_URL + '/bilkom/api/departures/normal/' + numerStacji;
+  var oldUrl = OLD_API_URL + '/bilkom/api/departures/normal/' + numerStacji;
+  console.log(newUrl)
+
+  xhrJsonArray(newUrl, sendDepartures,
+    function() {
+      console.log('New backend failed, falling back to old API: ' + oldUrl);
+      xhrJsonArray(oldUrl, sendDepartures, sendNoDepartures);
+    }
+  );
 }
 
 function findClosestStations(lat, lon, count) {
@@ -118,6 +178,10 @@ function sendStationList(stations) {
       numerStacji: stations[i].numerStacji,
       distance: stations[i].distance,
       messageType: "stationList"
+    }
+
+    if (stations[i].category) {
+      dictionary.category = stations[i].category;
     }
 
     Pebble.sendAppMessage(dictionary,

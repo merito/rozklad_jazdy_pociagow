@@ -13,6 +13,10 @@ BILKOM_STATIONS_PATH = os.path.join(
 
 def _normalize_name(name: str) -> str:
     name = name.strip().lower()
+    # NFKD does not decompose Polish "ł", map it explicitly
+    name = name.replace("ł", "l")
+    # treat separators as word boundaries ("Bielsko-Biała" == "Bielsko Biala")
+    name = re.sub(r"[-–—/]", " ", name)
     name = unicodedata.normalize("NFKD", name)
     name = name.encode("ascii", "ignore").decode("ascii")
     name = re.sub(r"[^a-z0-9 ]", "", name)
