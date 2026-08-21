@@ -1,0 +1,11 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: rozklad_backend/Dockerfile
+    container_name: rozklad-backend
+    ports:
+      - "30190:8000"
+    env_file:
+      - .env
+    command: uvicorn app.main:app --host "::" --port 8000 --reload
