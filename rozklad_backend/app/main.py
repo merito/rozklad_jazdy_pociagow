@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from datetime import datetime, timedelta, timezone
@@ -242,6 +243,50 @@ async def get_departures(numer_stacji: str):
     # Match the old Bilkom API: order by the published timetable time,
     # regardless of each train's current delay.
     departures.sort(key=lambda d: d["timestamp"])
+
+    return departures
+
+
+@app.get("/bilkom/api/departures/normal/{numer_stacji}")
+async def get_departures(numer_stacji: str):
+    if not station_mapper.is_ready:
+        raise HTTPException(
+            status_code=503,
+            detail="Station mapping not loaded yet",
+        )
+
+    pdp_id = station_mapper.get_pdp_id(numer_stacji)
+    if pdp_id is None:
+        station_name = (
+            station_mapper.get_bilkom_name(numer_stacji) or "unknown station"
+        )
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"Station with ID {numer_stacji} "
+                f"('{station_name}') not found in PDP database"
+            ),
+        )
+
+    # PDP operating dates follow the local (Europe/Warsaw) timetable day
+    today = datetime.now(WARSAW_TZ).date()
+    date_from = (today - timedelta(days=1)).isoformat()
+    date_to = (today + timedelta(days=1)).isoformat()
+    now_ts = int(datetime.now(timezone.utc).timestamp())
+
+    try:
+        schedules, operations = await asyncio.gather(
+            pdp_client.get_schedules([pdp_id], date_from, date_to),
+            pdp_client.get_operations([pdp_id]),
+        )
+    except Exception as e:
+        logger.error("PDP API error: %s", e)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Failed to fetch data from PDP API: {e}",
+        )
+
+    departures = _extract_departures(schedules, operations, pdp_id, now_ts)
 
     return JSONResponse(content=departures[:MAX_DEPARTURES])
 
