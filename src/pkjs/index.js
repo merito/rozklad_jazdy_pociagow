@@ -126,9 +126,24 @@ function sendDepartures(json) {
   }
 }
 
+// numerStacji is a PDP station id; the old API needs the historic
+// bilkom number kept in bilkomNumerStacji
+var bilkomNumberFor = (function () {
+  var map = {};
+  for (var i = 0; i < stationData.length; i++) {
+    var s = stationData[i];
+    if (s.bilkomNumerStacji) {
+      map[s.numerStacji] = s.bilkomNumerStacji;
+    }
+  }
+  return function (numerStacji) {
+    return map[numerStacji] || numerStacji;
+  };
+})();
+
 function getDepartures(numerStacji) {
   var newUrl = BACKEND_URL + '/bilkom/api/departures/normal/' + numerStacji;
-  var oldUrl = OLD_API_URL + '/bilkom/api/departures/normal/' + numerStacji;
+  var oldUrl = OLD_API_URL + '/bilkom/api/departures/normal/' + bilkomNumberFor(numerStacji);
   console.log(newUrl)
 
   xhrJsonArray(newUrl, sendDepartures,
