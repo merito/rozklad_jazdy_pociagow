@@ -27,8 +27,8 @@ async def lifespan(app: FastAPI):
     try:
         pdp_stations = await pdp_client.get_stations()
         await station_mapper.build_mapping(pdp_stations)
-        mapped = len(station_mapper._bilkom_to_pdp)
-        total = len(station_mapper._bilkom_to_name)
+        mapped = len(station_mapper._id_map)
+        total = len(station_mapper._station_names)
         logger.info(
             "Station mapping ready: %d/%d bilkom stations mapped",
             mapped, total,
@@ -145,43 +145,13 @@ def _get_arrival_station_name(
     return str(last_id) if last_id else ""
 
 
-@app.get("/bilkom/api/departures/normal/{numer_stacji}")
-async def get_departures(numer_stacji: str):
-    if not station_mapper.is_ready:
-        raise HTTPException(
-            status_code=503,
-            detail="Station mapping not loaded yet",
-        )
-
-    pdp_id = station_mapper.get_pdp_id(numer_stacji)
-    if pdp_id is None:
-        station_name = station_mapper.get_bilkom_name(numer_stacji)
-        raise HTTPException(
-            status_code=404,
-            detail=(
-                f"Station with bilkom ID {numer_stacji} "
-                f"('{station_name}') not found in PDP database"
-            ),
-        )
-
-    # PDP operating dates follow the local (Europe/Warsaw) timetable day
-    today = datetime.now(WARSAW_TZ).date()
-    date_from = (today - timedelta(days=1)).isoformat()
-    date_to = (today + timedelta(days=1)).isoformat()
-    pdp_ids = [pdp_id]
-
-    try:
-        schedules = await pdp_client.get_schedules(pdp_ids, date_from, date_to)
-        operations = await pdp_client.get_operations(pdp_ids)
-    except Exception as e:
-        logger.error("PDP API error: %s", e)
-        raise HTTPException(
-            status_code=502,
-            detail=f"Failed to fetch data from PDP API: {e}",
-        )
-
+def _extract_departures(
+    schedules: list[dict],
+    operations: list[dict],
+    pdp_id: int,
+    now_ts: int,
+) -> list[dict]:
     operations_index = _build_operations_index(operations, pdp_id)
-    now_ts = int(datetime.now(timezone.utc).timestamp())
 
     departures = []
     seen = set()
@@ -296,11 +266,11 @@ async def health():
     return {
         "status": "ok",
         "bilkom_stations": (
-            len(station_mapper._bilkom_to_name) if station_mapper.is_ready else 0
+            len(station_mapper._station_names) if station_mapper.is_ready else 0
         ),
         "pdp_stations": station_mapper.pdp_station_count,
         "mapped": (
-            len(station_mapper._bilkom_to_pdp) if station_mapper.is_ready else 0
+            len(station_mapper._id_map) if station_mapper.is_ready else 0
         ),
     }
 

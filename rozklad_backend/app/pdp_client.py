@@ -89,21 +89,38 @@ class PDPClient:
         client = await self._get_client()
         stations_str = ",".join(str(s) for s in station_ids)
         today = date.today().isoformat()
+        all_routes: list[dict[str, Any]] = []
+        page = 1
 
-        resp = await client.get(
-            "/api/v1/schedules/shortened",
-            params={
-                "stations": stations_str,
-                "dateFrom": date_from or today,
-                "dateTo": date_to or today,
-                "fullRoute": "true",
-                "dictionaries": "false",
-                "pageSize": 5000,
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return data.get("rt") or []
+        while True:
+            resp = await client.get(
+                "/api/v1/schedules/shortened",
+                params={
+                    "stations": stations_str,
+                    "dateFrom": date_from or today,
+                    "dateTo": date_to or today,
+                    "fullRoute": "true",
+                    "dictionaries": "false",
+                    "pageSize": 5000,
+                    "page": page,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            all_routes.extend(data.get("rt") or [])
+
+            # shortened pagination fields: hn=hasNextPage, p=page, tp=totalPages
+            pg = data.get("pg") or {}
+            has_next = pg.get("hn")
+            if has_next is None:
+                has_next = pg.get("hasNextPage")
+            if has_next is None:
+                has_next = page < (pg.get("tp") or pg.get("totalPages") or 1)
+            if not has_next:
+                break
+            page += 1
+
+        return all_routes
 
     async def close(self):
         if self._client:

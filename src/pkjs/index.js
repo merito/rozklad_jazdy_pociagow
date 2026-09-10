@@ -29,42 +29,81 @@ Pebble.addEventListener('appmessage',
 );
 
 // New backend (PDP API) is primary, old kalkulatorkolejowy.pl API is fallback
-var BACKEND_URL = 'http://localhost:8000';
+var BACKEND_URL = 'https://pociagi.bieda.it';
 var OLD_API_URL = 'https://kalkulatorkolejowy.pl';
 
 // GET JSON array from url, call onError on network error, bad status
 // or a response that is not a JSON array
 var xhrJsonArray = function (url, onSuccess, onError) {
   var xhr = new XMLHttpRequest();
+  var completed = false;
+  var timeoutId;
+
+  var succeed = function(json) {
+    if (completed) return;
+    completed = true;
+    clearTimeout(timeoutId);
+    onSuccess(json);
+  };
+
+  var fail = function(message) {
+    if (completed) return;
+    completed = true;
+    clearTimeout(timeoutId);
+    console.log(message);
+    onError();
+  };
+
   xhr.onload = function () {
     if (this.status >= 200 && this.status < 300) {
       try {
         var json = JSON.parse(this.responseText);
         if (json && typeof json.length === 'number') {
-          onSuccess(json);
+          succeed(json);
           return;
         }
       } catch (e) {
-        console.log('Invalid JSON from ' + url + ': ' + e);
+        fail('Invalid JSON from ' + url + ': ' + e);
+        return;
       }
+      fail('Invalid response from ' + url);
     } else {
-      console.log('HTTP ' + this.status + ' from ' + url);
+      fail('HTTP ' + this.status + ' from ' + url);
     }
-    onError();
   };
   xhr.onerror = function () {
-    console.log('Request failed: ' + url);
-    onError();
+    fail('Request failed: ' + url);
   };
+
+  try {
+    xhr.open('GET', url);
+  } catch (e) {
+    fail('Could not open request to ' + url + ': ' + e);
+    return;
+  }
+
   try {
     xhr.timeout = 15000;
     xhr.ontimeout = function () {
-      console.log('Request timed out: ' + url);
-      onError();
+      fail('Request timed out: ' + url);
     };
   } catch (e) {}
-  xhr.open('GET', url);
-  xhr.send();
+
+  // Some PebbleKit JS runtimes do not implement XMLHttpRequest.timeout.
+  // Keep an independent watchdog so the fallback still runs there.
+  timeoutId = setTimeout(function() {
+    if (completed) return;
+    try {
+      xhr.abort();
+    } catch (e) {}
+    fail('Request timed out: ' + url);
+  }, 15000);
+
+  try {
+    xhr.send();
+  } catch (e) {
+    fail('Could not send request to ' + url + ': ' + e);
+  }
 };
 
 function sendNoDepartures() {
@@ -126,9 +165,24 @@ function sendDepartures(json) {
   }
 }
 
+// numerStacji is a PDP station id; the old API needs the historic
+// bilkom number kept in bilkomNumerStacji
+var bilkomNumberFor = (function () {
+  var map = {};
+  for (var i = 0; i < stationData.length; i++) {
+    var s = stationData[i];
+    if (s.bilkomNumerStacji) {
+      map[s.numerStacji] = s.bilkomNumerStacji;
+    }
+  }
+  return function (numerStacji) {
+    return map[numerStacji] || numerStacji;
+  };
+})();
+
 function getDepartures(numerStacji) {
   var newUrl = BACKEND_URL + '/bilkom/api/departures/normal/' + numerStacji;
-  var oldUrl = OLD_API_URL + '/bilkom/api/departures/normal/' + numerStacji;
+  var oldUrl = OLD_API_URL + '/bilkom/api/departures/normal/' + bilkomNumberFor(numerStacji);
   console.log(newUrl)
 
   xhrJsonArray(newUrl, sendDepartures,
