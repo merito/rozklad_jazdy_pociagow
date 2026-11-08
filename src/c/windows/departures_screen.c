@@ -155,6 +155,13 @@ static void prv_window_load(Window *window) {
   custom_status_bar = custom_status_bar_layer_create(BAR_HEIGHT, GColorBlack, ICON_WIDTH_HEIGHT);
   s_departures_menu_layer = menu_layer_create(GRect(0, BAR_HEIGHT, bounds.size.w, bounds.size.h - BAR_HEIGHT));
 
+  // MenuLayer paints its own default (black) highlight bar before calling
+  // draw_row, which flashes during scrolling under our category-colored
+  // bars. Make the built-in highlight transparent; the row renderer paints
+  // the selection itself.
+  menu_layer_set_highlight_colors(s_departures_menu_layer, GColorClear,
+                                  GColorWhite);
+
   menu_layer_set_callbacks(s_departures_menu_layer, NULL, (MenuLayerCallbacks){
     .get_num_sections = menu_get_num_sections_callback,
     .get_num_rows = menu_get_num_rows_callback,
