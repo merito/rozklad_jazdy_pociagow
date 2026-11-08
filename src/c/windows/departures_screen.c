@@ -1,6 +1,7 @@
 #include "departures_screen.h"
 #include "status_bar.h"
 #include "../libs/menu_list_cell.h"
+#include "../libs/palette.h"
 #include "../data.h"
 #include <stdlib.h>
 #include <strings.h>
@@ -39,17 +40,17 @@ static bool prv_category_color(const char *train_code, GColor *out) {
   static const char *const green[] = {"IC", "TLK", "EX", "IR"};
   for (size_t k = 0; k < 4; k++) {
     if (strcasecmp(prefix, blue[k]) == 0) {
-      *out = PBL_IF_COLOR_ELSE(GColorCobaltBlue, GColorBlack);
+      *out = PBL_IF_COLOR_ELSE(COL_PREMIUM_BLUE, GColorBlack);
       return true;
     }
   }
   for (size_t k = 0; k < 4; k++) {
     if (strcasecmp(prefix, green[k]) == 0) {
-      *out = PBL_IF_COLOR_ELSE(GColorFromRGB(0, 128, 0), GColorBlack);
+      *out = PBL_IF_COLOR_ELSE(COL_CAT_GREEN, GColorBlack);
       return true;
     }
   }
-  *out = PBL_IF_COLOR_ELSE(GColorFromRGB(210, 95, 0), GColorBlack);
+  *out = PBL_IF_COLOR_ELSE(COL_CAT_ORANGE, GColorBlack);
   return true;
 }
 
@@ -100,10 +101,9 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
       const int delay_min = atoi(s_departures[index].delay);
       GColor delay_color = GColorDarkGray;
       if (delay_min > 15) {
-        delay_color = PBL_IF_COLOR_ELSE(GColorRed, GColorDarkGray);
+        delay_color = PBL_IF_COLOR_ELSE(COL_DELAY_RED, GColorDarkGray);
       } else if (delay_min > 5) {
-        delay_color = PBL_IF_COLOR_ELSE(GColorFromRGB(210, 95, 0),
-                                        GColorDarkGray);
+        delay_color = PBL_IF_COLOR_ELSE(COL_CAT_ORANGE, GColorDarkGray);
       }
 
       const MenuTextRun runs[] = {

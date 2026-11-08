@@ -1,5 +1,6 @@
 #include "station_cell.h"
 #include "menu_list_cell.h"
+#include "palette.h"
 
 #define PREMIUM_MARKER "\u2022 "
 
@@ -21,7 +22,7 @@ void station_cell_draw(GContext *ctx, const Layer *cell_layer,
 
   GColor title_color;
   if (data->premium) {
-    title_color = PBL_IF_COLOR_ELSE(GColorCobaltBlue, GColorBlack);
+    title_color = PBL_IF_COLOR_ELSE(COL_PREMIUM_BLUE, GColorBlack);
   } else {
     title_color = GColorBlack;
   }
