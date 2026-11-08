@@ -1,6 +1,7 @@
 #include <pebble.h>
 #include "windows/departures_screen.h"
 #include "windows/status_bar.h"
+#include "libs/station_cell.h"
 #include "data.h"
 
 #define NUM_MENU_SECTIONS 1
@@ -9,6 +10,7 @@ typedef struct Station {
   char name[100];
   char numerStacji[8];
   char distance[30];
+  bool premium;
 } Station;
 
 #define STATION_COUNT 10
@@ -49,8 +51,17 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
   // Determine which section we're going to draw in
   switch (cell_index->section) {
     case 0:
-      menu_cell_basic_draw(ctx, cell_layer, s_stations[cell_index->row].name, s_stations[cell_index->row].distance, NULL);
+    {
+      const Station *station = &s_stations[cell_index->row];
+      const StationCellData cell_data = {
+        .name = station->name,
+        .distance = station->distance,
+        .premium = station->premium,
+      };
+      station_cell_draw(ctx, cell_layer, &cell_data,
+                        menu_layer_is_index_selected(s_station_menu_layer, cell_index));
       break;
+    }
   }
 }
 
@@ -148,6 +159,15 @@ void s_closest_station_callback(DictionaryIterator *iter) {
   COPY_STRING(s_stations[s_station_count].name, name);
   COPY_STRING(s_stations[s_station_count].numerStacji, numerStacji);
   COPY_STRING(s_stations[s_station_count].distance, distance);
+
+  // category is optional; pkjs sends it only for premium stations
+  Tuple *category_tuple = dict_find(iter, MESSAGE_KEY_category);
+  s_stations[s_station_count].premium =
+      category_tuple && category_tuple->type == TUPLE_CSTRING &&
+      strcmp(category_tuple->value->cstring, "premium") == 0;
+  APP_LOG(APP_LOG_LEVEL_INFO, "station %s premium=%d",
+          s_stations[s_station_count].name,
+          (int)s_stations[s_station_count].premium);
 
   s_station_count++;
 
