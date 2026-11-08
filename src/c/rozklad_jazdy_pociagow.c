@@ -99,6 +99,11 @@ static void prv_window_load(Window *window) {
   custom_status_bar = custom_status_bar_layer_create(BAR_HEIGHT, GColorBlack, ICON_WIDTH_HEIGHT);
   s_station_menu_layer = menu_layer_create(GRect(0, BAR_HEIGHT, bounds.size.w, bounds.size.h - BAR_HEIGHT));
 
+  // Same as on the departures list: hide the stock black selection bar
+  // (it flashes while scrolling); station cells paint their own highlight.
+  menu_layer_set_highlight_colors(s_station_menu_layer, GColorClear,
+                                  GColorWhite);
+
   menu_layer_set_callbacks(s_station_menu_layer, NULL, (MenuLayerCallbacks){
     .get_num_sections = menu_get_num_sections_callback,
     .get_num_rows = menu_get_num_rows_callback,

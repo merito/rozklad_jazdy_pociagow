@@ -119,7 +119,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
       // line stays gray apart from the severity-colored delay.
       menu_list_cell_draw_runs(ctx, cell_layer,
                           s_departures[index].arrivalStation, runs, 3,
-                          colored ? cat_color : GColorBlack, false,
+                          colored ? cat_color : GColorBlack, true,
                           menu_layer_is_index_selected(s_departures_menu_layer,
                                                        cell_index));
       break;
@@ -129,6 +129,14 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 
 static void menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
 }
+
+#ifdef PBL_RECT
+static int16_t get_cell_height_rect_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
+  // Exact height of the two text lines drawn by the shared row renderer
+  // (same as the stations list: big top-aligned title, no empty strip).
+  return menu_list_cell_height();
+}
+#endif
 
 #ifdef PBL_ROUND 
 static int16_t get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) { 
@@ -169,7 +177,7 @@ static void prv_window_load(Window *window) {
     .draw_header = PBL_IF_RECT_ELSE(menu_draw_header_callback, NULL),
     .draw_row = menu_draw_row_callback,
     .select_click = menu_select_callback,
-    .get_cell_height = PBL_IF_ROUND_ELSE(get_cell_height_callback, NULL),
+    .get_cell_height = PBL_IF_ROUND_ELSE(get_cell_height_callback, get_cell_height_rect_callback),
   });
 
   menu_layer_set_click_config_onto_window(s_departures_menu_layer, window);
