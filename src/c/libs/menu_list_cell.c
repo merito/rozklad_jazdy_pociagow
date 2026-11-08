@@ -9,6 +9,23 @@ static int16_t single_line_height(GFont font, GRect constraint) {
       .h;
 }
 
+// Advance width of a run, including a trailing space (content-size strips
+// it, so measure with a sentinel glyph and subtract its width back off).
+static int16_t run_advance(GFont font, const char *text) {
+  char buf[80];
+  snprintf(buf, sizeof(buf), "%s|", text);
+  const GRect loose = { {0, 0}, {2000, 100} };
+  const int16_t with = graphics_text_layout_get_content_size(
+                           buf, font, loose, GTextOverflowModeFill,
+                           GTextAlignmentLeft)
+                           .w;
+  const int16_t bar = graphics_text_layout_get_content_size(
+                          "|", font, loose, GTextOverflowModeFill,
+                          GTextAlignmentLeft)
+                          .w;
+  return with - bar;
+}
+
 int16_t menu_list_cell_height(void) {
   const GRect dummy = { {0, 0}, {144, 1000} };
   GFont title_font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
@@ -17,10 +34,11 @@ int16_t menu_list_cell_height(void) {
          single_line_height(subtitle_font, dummy) + 3;
 }
 
-void menu_list_cell_draw(GContext *ctx, const Layer *cell_layer,
-                         const char *title, const char *subtitle,
-                         GColor title_color, GColor subtitle_color,
-                         bool big_title, bool selected) {
+void menu_list_cell_draw_runs(GContext *ctx, const Layer *cell_layer,
+                              const char *title,
+                              const MenuTextRun *runs, size_t num_runs,
+                              GColor title_color, bool big_title,
+                              bool selected) {
   const GRect bounds = layer_get_bounds(cell_layer);
 
   // Selected: paint the highlight in the row color (MenuLayer's own black
@@ -75,7 +93,6 @@ void menu_list_cell_draw(GContext *ctx, const Layer *cell_layer,
 
   if (selected) {
     title_color = GColorWhite;
-    subtitle_color = GColorWhite;
   }
 
   graphics_context_set_text_color(ctx, title_color);
@@ -83,8 +100,29 @@ void menu_list_cell_draw(GContext *ctx, const Layer *cell_layer,
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft,
                      NULL);
 
-  graphics_context_set_text_color(ctx, subtitle_color);
-  graphics_draw_text(ctx, subtitle, subtitle_font, subtitle_box,
-                     GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft,
-                     NULL);
+  // Detail line: laid out run by run so each piece can keep its own color
+  // (e.g. gray time, orange delay, gray platform).
+  int16_t x = subtitle_box.origin.x;
+  for (size_t i = 0; i < num_runs && x < subtitle_box.origin.x + subtitle_box.size.w; i++) {
+    if (!runs[i].text || runs[i].text[0] == '\0') {
+      continue;
+    }
+    GRect run_box = {{x, subtitle_box.origin.y},
+                     {subtitle_box.size.w - (x - subtitle_box.origin.x),
+                      subtitle_box.size.h}};
+    graphics_context_set_text_color(
+        ctx, selected ? GColorWhite : runs[i].color);
+    graphics_draw_text(ctx, runs[i].text, subtitle_font, run_box,
+                       GTextOverflowModeFill, GTextAlignmentLeft, NULL);
+    x += run_advance(subtitle_font, runs[i].text);
+  }
+}
+
+void menu_list_cell_draw(GContext *ctx, const Layer *cell_layer,
+                         const char *title, const char *subtitle,
+                         GColor title_color, GColor subtitle_color,
+                         bool big_title, bool selected) {
+  const MenuTextRun run = {subtitle, subtitle_color};
+  menu_list_cell_draw_runs(ctx, cell_layer, title, &run, 1, title_color,
+                           big_title, selected);
 }

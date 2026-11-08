@@ -2,6 +2,7 @@
 #include "status_bar.h"
 #include "../libs/menu_list_cell.h"
 #include "../data.h"
+#include <stdlib.h>
 #include <strings.h>
 
 #define NUM_MENU_SECTIONS 1
@@ -85,21 +86,40 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
   switch (cell_index->section) {
     case 0:
     {
-      char combined_text[32];
+      char time_run[16], delay_run[16], rest_run[32];
       int index = cell_index->row;
 
       APP_LOG(APP_LOG_LEVEL_INFO, s_departures[index].timestamp);
 
-      snprintf(combined_text, sizeof(combined_text), "%s +%s %s/%s %s", s_departures[index].timestamp, s_departures[index].delay, s_departures[index].platform, s_departures[index].track, s_departures[index].trainCode);
+      snprintf(time_run, sizeof(time_run), "%s ", s_departures[index].timestamp);
+      snprintf(delay_run, sizeof(delay_run), "+%s ", s_departures[index].delay);
+      snprintf(rest_run, sizeof(rest_run), "%s/%s %s", s_departures[index].platform, s_departures[index].track, s_departures[index].trainCode);
+
+      // Delay severity: up to 5 min gray (status quo), up to 15 min
+      // orange, above 15 min red. 1-bit keeps the plain gray line.
+      const int delay_min = atoi(s_departures[index].delay);
+      GColor delay_color = GColorDarkGray;
+      if (delay_min > 15) {
+        delay_color = PBL_IF_COLOR_ELSE(GColorRed, GColorDarkGray);
+      } else if (delay_min > 5) {
+        delay_color = PBL_IF_COLOR_ELSE(GColorFromRGB(210, 95, 0),
+                                        GColorDarkGray);
+      }
+
+      const MenuTextRun runs[] = {
+          {time_run, GColorDarkGray},
+          {delay_run, delay_color},
+          {rest_run, GColorDarkGray},
+      };
 
       GColor cat_color;
       const bool colored =
           prv_category_color(s_departures[index].trainCode, &cat_color);
       // Only the destination name carries the category color; the detail
-      // line stays gray, like the distance on the stations list.
-      menu_list_cell_draw(ctx, cell_layer, s_departures[index].arrivalStation,
-                          combined_text, colored ? cat_color : GColorBlack,
-                          GColorDarkGray, false,
+      // line stays gray apart from the severity-colored delay.
+      menu_list_cell_draw_runs(ctx, cell_layer,
+                          s_departures[index].arrivalStation, runs, 3,
+                          colored ? cat_color : GColorBlack, false,
                           menu_layer_is_index_selected(s_departures_menu_layer,
                                                        cell_index));
       break;

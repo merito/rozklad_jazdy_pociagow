@@ -14,3 +14,17 @@ void menu_list_cell_draw(GContext *ctx, const Layer *cell_layer,
 
 // Exact row height for the big_title layout on rectangular platforms.
 int16_t menu_list_cell_height(void);
+
+// One colored piece of a multi-color detail line.
+typedef struct {
+  const char *text;
+  GColor color;
+} MenuTextRun;
+
+// Same as menu_list_cell_draw but the detail line is drawn as a sequence of
+// colored runs (e.g. gray time, orange delay, gray platform).
+void menu_list_cell_draw_runs(GContext *ctx, const Layer *cell_layer,
+                              const char *title,
+                              const MenuTextRun *runs, size_t num_runs,
+                              GColor title_color, bool big_title,
+                              bool selected);
