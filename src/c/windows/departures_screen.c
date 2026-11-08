@@ -95,9 +95,11 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
       GColor cat_color;
       const bool colored =
           prv_category_color(s_departures[index].trainCode, &cat_color);
+      // Only the destination name carries the category color; the detail
+      // line stays gray, like the distance on the stations list.
       menu_list_cell_draw(ctx, cell_layer, s_departures[index].arrivalStation,
                           combined_text, colored ? cat_color : GColorBlack,
-                          colored ? cat_color : GColorDarkGray, false,
+                          GColorDarkGray, false,
                           menu_layer_is_index_selected(s_departures_menu_layer,
                                                        cell_index));
       break;
