@@ -194,7 +194,8 @@ const stationData = [
     "bilkomNumerStacji": "5100003",
     "name": "Brzeg",
     "lat": "50.853056",
-    "lon": "17.470553"
+    "lon": "17.470553",
+    "category": "premium"
   },
   {
     "numerStacji": "60269",
@@ -917,7 +918,8 @@ const stationData = [
     "bilkomNumerStacji": "5100144",
     "name": "Szczecin Dąbie",
     "lat": "53.390837",
-    "lon": "14.668058"
+    "lon": "14.668058",
+    "category": "premium"
   },
   {
     "numerStacji": "208",
@@ -1113,7 +1115,8 @@ const stationData = [
     "bilkomNumerStacji": "5100181",
     "name": "Nowy Targ",
     "lat": "49.473329",
-    "lon": "20.015274"
+    "lon": "20.015274",
+    "category": "premium"
   },
   {
     "numerStacji": "58784",
@@ -1466,7 +1469,8 @@ const stationData = [
     "bilkomNumerStacji": "5100240",
     "name": "Kraków Płaszów",
     "lat": "50.035002",
-    "lon": "19.975002"
+    "lon": "19.975002",
+    "category": "premium"
   },
   {
     "numerStacji": "41707",
