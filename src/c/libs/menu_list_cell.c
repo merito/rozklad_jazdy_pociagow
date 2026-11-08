@@ -22,6 +22,16 @@ void menu_list_cell_draw(GContext *ctx, const Layer *cell_layer,
                          GColor title_color, GColor subtitle_color,
                          bool big_title, bool selected) {
   const GRect bounds = layer_get_bounds(cell_layer);
+
+  // Selected: paint the highlight in the row color (MenuLayer's own black
+  // bar is overpainted), text stays white as set below. On 1-bit the
+  // category colors are black, so this reproduces the stock negative.
+  if (selected) {
+    graphics_context_set_fill_color(ctx, PBL_IF_COLOR_ELSE(title_color, GColorBlack));
+    graphics_fill_rect(ctx, bounds, PBL_IF_ROUND_ELSE(bounds.size.h / 2, 0),
+                       GCornerNone);
+  }
+
   const GRect text = PBL_IF_ROUND_ELSE(
       grect_inset(bounds, GEdgeInsets(6, 12, 6, 12)),
       grect_inset(bounds, GEdgeInsets(big_title ? 0 : 2, 4, 0, 4)));

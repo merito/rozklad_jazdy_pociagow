@@ -7,15 +7,8 @@ int16_t station_cell_height(void) { return menu_list_cell_height(); }
 
 void station_cell_draw(GContext *ctx, const Layer *cell_layer,
                        const StationCellData *data, bool selected) {
-  // MenuLayer fills the selected cell with its own (black) highlight before
-  // calling us; premium stations get a blue highlight instead.
-  if (selected && data->premium) {
-    graphics_context_set_fill_color(
-        ctx, PBL_IF_COLOR_ELSE(GColorCobaltBlue, GColorBlack));
-    const GRect bounds = layer_get_bounds(cell_layer);
-    graphics_fill_rect(ctx, bounds, PBL_IF_ROUND_ELSE(bounds.size.h / 2, 0),
-                       GCornerNone);
-  }
+  // The shared renderer paints the selection bar with title_color, so
+  // selected premium rows get the blue highlight automatically.
 
   // On 1-bit platforms blue would render as black, so mark premium
   // stations with a bullet prefix instead.
