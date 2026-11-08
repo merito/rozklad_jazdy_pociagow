@@ -16,10 +16,24 @@ void station_cell_draw(GContext *ctx, const Layer *cell_layer,
   const GRect bounds = layer_get_bounds(cell_layer);
   const GRect text = PBL_IF_ROUND_ELSE(
       grect_inset(bounds, GEdgeInsets(6, 12, 6, 12)),
-      grect_inset(bounds, GEdgeInsets(4)));
+      grect_inset(bounds, GEdgeInsets(2, 4, 2, 4)));
 
-  GFont title_font = fonts_get_system_font(PBL_IF_ROUND_ELSE(
-      FONT_KEY_GOTHIC_24_BOLD, FONT_KEY_GOTHIC_18_BOLD));
+  // MenuLayer fills the selected cell with its own (black) highlight before
+  // calling us; premium stations get a blue highlight instead.
+  if (selected && data->premium) {
+    graphics_context_set_fill_color(
+        ctx, PBL_IF_COLOR_ELSE(GColorCobaltBlue, GColorBlack));
+    graphics_fill_rect(ctx, bounds, PBL_IF_ROUND_ELSE(bounds.size.h / 2, 0),
+                       GCornerNone);
+  }
+
+  GFont title_font;
+#if PBL_ROUND
+  title_font = fonts_get_system_font(
+      selected ? FONT_KEY_GOTHIC_24_BOLD : FONT_KEY_GOTHIC_20_BOLD);
+#else
+  title_font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+#endif
   GFont subtitle_font = fonts_get_system_font(
       PBL_IF_ROUND_ELSE(FONT_KEY_GOTHIC_18, FONT_KEY_GOTHIC_14));
 

@@ -69,6 +69,14 @@ static void menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, v
   departures_screen_init(s_stations[cell_index->row].numerStacji, s_stations[cell_index->row].name);
 }
 
+#if PBL_RECT
+static int16_t get_cell_height_rect_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
+  // GOTHIC_24_BOLD title + GOTHIC_14 distance need a taller row than
+  // MenuLayer's default.
+  return 46;
+}
+#endif
+
 #ifdef PBL_ROUND 
 static int16_t get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) { 
   if (menu_layer_is_index_selected(menu_layer, cell_index)) {
@@ -99,7 +107,7 @@ static void prv_window_load(Window *window) {
     .draw_header = PBL_IF_RECT_ELSE(menu_draw_header_callback, NULL),
     .draw_row = menu_draw_row_callback,
     .select_click = menu_select_callback,
-    .get_cell_height = PBL_IF_ROUND_ELSE(get_cell_height_callback, NULL),
+    .get_cell_height = PBL_IF_ROUND_ELSE(get_cell_height_callback, get_cell_height_rect_callback),
   });
 
   menu_layer_set_click_config_onto_window(s_station_menu_layer, window);
