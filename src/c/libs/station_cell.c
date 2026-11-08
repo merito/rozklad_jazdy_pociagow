@@ -2,6 +2,15 @@
 
 #define PREMIUM_MARKER "\u2022 "
 
+// Height of a single text line for the given font (measured on a short,
+// space-free sample so the measurement can never wrap).
+static int16_t single_line_height(GFont font, GRect constraint) {
+  return graphics_text_layout_get_content_size(
+             "\u0141\u0104\u017b", font, constraint,
+             GTextOverflowModeWordWrap, GTextAlignmentLeft)
+      .h;
+}
+
 void station_cell_draw(GContext *ctx, const Layer *cell_layer,
                        const StationCellData *data, bool selected) {
   const GRect bounds = layer_get_bounds(cell_layer);
@@ -23,20 +32,21 @@ void station_cell_draw(GContext *ctx, const Layer *cell_layer,
     snprintf(title, sizeof(title), "%s", data->name);
   }
 
-  GSize title_size = graphics_text_layout_get_content_size(
-      title, title_font, text, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
-  GSize subtitle_size = graphics_text_layout_get_content_size(
-      data->distance, subtitle_font, text, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
+  // Keep the title on a single line with a trailing ellipsis: a wrapped
+  // (multi-line) station name used to push the distance line out of the
+  // cell. The distance must always stay visible.
+  const int16_t title_height = single_line_height(title_font, text);
+  const int16_t subtitle_height = single_line_height(subtitle_font, text);
 
-  const int16_t total_height = title_size.h + subtitle_size.h;
+  const int16_t total_height = title_height + subtitle_height;
   int16_t y = text.origin.y + (int16_t)(text.size.h - total_height) / 2;
   if (y < text.origin.y) {
     y = text.origin.y;
   }
 
-  const GRect title_box = { {text.origin.x, y}, {text.size.w, title_size.h} };
+  const GRect title_box = { {text.origin.x, y}, {text.size.w, title_height} };
   const GRect subtitle_box = {
-      {text.origin.x, y + title_size.h}, {text.size.w, subtitle_size.h}};
+      {text.origin.x, y + title_height}, {text.size.w, subtitle_height}};
 
   GColor title_color;
   if (selected) {
@@ -48,11 +58,13 @@ void station_cell_draw(GContext *ctx, const Layer *cell_layer,
   }
 
   graphics_context_set_text_color(ctx, title_color);
-  graphics_draw_text(ctx, title, title_font, title_box, GTextOverflowModeTrailingEllipsis,
-                     GTextAlignmentLeft, NULL);
+  graphics_draw_text(ctx, title, title_font, title_box,
+                     GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft,
+                     NULL);
 
   graphics_context_set_text_color(ctx,
                                   selected ? GColorWhite : GColorDarkGray);
   graphics_draw_text(ctx, data->distance, subtitle_font, subtitle_box,
-                     GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+                     GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft,
+                     NULL);
 }
