@@ -1,6 +1,8 @@
 #include "departures_screen.h"
 #include "status_bar.h"
+#include "../libs/menu_list_cell.h"
 #include "../data.h"
+#include <strings.h>
 
 #define NUM_MENU_SECTIONS 1
 #define NUM_FIRST_MENU_ITEMS 2
@@ -16,6 +18,39 @@ CustomStatusBarLayer *custom_status_bar;
 MenuLayer *s_departures_menu_layer;
 
 bool departuresPending = true;
+
+// Row palette by train category (first token of trainCode, e.g. "EIP 3514"):
+// EIP/EIC/EC/EN blue, IC/TLK/EX/IR green, everything else orange.
+// Placeholder rows ("-", "No departures") keep the stock black/gray look.
+static bool prv_category_color(const char *train_code, GColor *out) {
+  char prefix[8];
+  size_t i = 0;
+  while (train_code && train_code[i] && train_code[i] != ' ' &&
+         i < sizeof(prefix) - 1) {
+    prefix[i] = train_code[i];
+    i++;
+  }
+  prefix[i] = '\0';
+  if (prefix[0] == '\0' || prefix[0] == '-') {
+    return false;
+  }
+  static const char *const blue[] = {"EIP", "EIC", "EC", "EN"};
+  static const char *const green[] = {"IC", "TLK", "EX", "IR"};
+  for (size_t k = 0; k < 4; k++) {
+    if (strcasecmp(prefix, blue[k]) == 0) {
+      *out = PBL_IF_COLOR_ELSE(GColorCobaltBlue, GColorBlack);
+      return true;
+    }
+  }
+  for (size_t k = 0; k < 4; k++) {
+    if (strcasecmp(prefix, green[k]) == 0) {
+      *out = PBL_IF_COLOR_ELSE(GColorFromRGB(0, 128, 0), GColorBlack);
+      return true;
+    }
+  }
+  *out = PBL_IF_COLOR_ELSE(GColorFromRGB(210, 95, 0), GColorBlack);
+  return true;
+}
 
 
 static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
@@ -57,7 +92,14 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 
       snprintf(combined_text, sizeof(combined_text), "%s +%s %s/%s %s", s_departures[index].timestamp, s_departures[index].delay, s_departures[index].platform, s_departures[index].track, s_departures[index].trainCode);
 
-      menu_cell_basic_draw(ctx, cell_layer, s_departures[index].arrivalStation, combined_text, NULL);
+      GColor cat_color;
+      const bool colored =
+          prv_category_color(s_departures[index].trainCode, &cat_color);
+      menu_list_cell_draw(ctx, cell_layer, s_departures[index].arrivalStation,
+                          combined_text, colored ? cat_color : GColorBlack,
+                          colored ? cat_color : GColorDarkGray, false,
+                          menu_layer_is_index_selected(s_departures_menu_layer,
+                                                       cell_index));
       break;
     }
   }
