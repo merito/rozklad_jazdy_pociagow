@@ -13,3 +13,7 @@ typedef struct {
 // inverted palette drawn by MenuLayer (white text on highlight).
 void station_cell_draw(GContext *ctx, const Layer *cell_layer,
                        const StationCellData *data, bool selected);
+
+// Exact row height (rectangular platforms) so MenuLayer rows contain no
+// empty strip above the station name.
+int16_t station_cell_height(void);

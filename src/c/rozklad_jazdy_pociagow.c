@@ -71,9 +71,8 @@ static void menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, v
 
 #if PBL_RECT
 static int16_t get_cell_height_rect_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
-  // GOTHIC_24_BOLD title + GOTHIC_14 distance need a taller row than
-  // MenuLayer's default.
-  return 46;
+  // Exact height of the two text lines drawn by the station cell component.
+  return station_cell_height();
 }
 #endif
 

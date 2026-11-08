@@ -11,12 +11,23 @@ static int16_t single_line_height(GFont font, GRect constraint) {
       .h;
 }
 
+// Exact row height for rectangular platforms: the two text lines plus a
+// small bottom gap, so no unused strip is left above the station name
+// (the system menu rows are equally tight).
+int16_t station_cell_height(void) {
+  const GRect dummy = { {0, 0}, {144, 1000} };
+  GFont title_font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+  GFont subtitle_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+  return single_line_height(title_font, dummy) +
+         single_line_height(subtitle_font, dummy) + 3;
+}
+
 void station_cell_draw(GContext *ctx, const Layer *cell_layer,
                        const StationCellData *data, bool selected) {
   const GRect bounds = layer_get_bounds(cell_layer);
   const GRect text = PBL_IF_ROUND_ELSE(
       grect_inset(bounds, GEdgeInsets(6, 12, 6, 12)),
-      grect_inset(bounds, GEdgeInsets(2, 4, 2, 4)));
+      grect_inset(bounds, GEdgeInsets(0, 4, 0, 4)));
 
   // MenuLayer fills the selected cell with its own (black) highlight before
   // calling us; premium stations get a blue highlight instead.
@@ -52,11 +63,18 @@ void station_cell_draw(GContext *ctx, const Layer *cell_layer,
   const int16_t title_height = single_line_height(title_font, text);
   const int16_t subtitle_height = single_line_height(subtitle_font, text);
 
+  // Top-align (like the stock menu cells) instead of vertically centering:
+  // centering added an empty strip above the name inside every row.
   const int16_t total_height = title_height + subtitle_height;
-  int16_t y = text.origin.y + (int16_t)(text.size.h - total_height) / 2;
+  int16_t y = text.origin.y;
+#if PBL_ROUND
+  y = text.origin.y + (int16_t)(text.size.h - total_height) / 2;
   if (y < text.origin.y) {
     y = text.origin.y;
   }
+#else
+  (void)total_height;
+#endif
 
   const GRect title_box = { {text.origin.x, y}, {text.size.w, title_height} };
   const GRect subtitle_box = {
