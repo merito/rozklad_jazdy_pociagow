@@ -48,6 +48,10 @@ static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, ui
 }
 
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
+#ifdef BISECT_STOCK_CELL
+  menu_cell_basic_draw(ctx, cell_layer, "Test station", "3.7 km", NULL);
+  return;
+#endif
   // Determine which section we're going to draw in
   switch (cell_index->section) {
     case 0:
