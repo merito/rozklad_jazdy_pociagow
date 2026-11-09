@@ -1,6 +1,10 @@
 #include "departures_screen.h"
 #include "status_bar.h"
+#include "../libs/menu_list_cell.h"
+#include "../libs/palette.h"
 #include "../data.h"
+#include <stdlib.h>
+#include <strings.h>
 
 #define NUM_MENU_SECTIONS 1
 #define NUM_FIRST_MENU_ITEMS 2
@@ -16,6 +20,39 @@ CustomStatusBarLayer *custom_status_bar;
 MenuLayer *s_departures_menu_layer;
 
 bool departuresPending = true;
+
+// Row palette by train category (first token of trainCode, e.g. "EIP 3514"):
+// EIP/EIC/EC/EN blue, IC/TLK/EX/IR green, everything else orange.
+// Placeholder rows ("-", "No departures") keep the stock black/gray look.
+static bool prv_category_color(const char *train_code, GColor *out) {
+  char prefix[8];
+  size_t i = 0;
+  while (train_code && train_code[i] && train_code[i] != ' ' &&
+         i < sizeof(prefix) - 1) {
+    prefix[i] = train_code[i];
+    i++;
+  }
+  prefix[i] = '\0';
+  if (prefix[0] == '\0' || prefix[0] == '-') {
+    return false;
+  }
+  static const char *const blue[] = {"EIP", "EIC", "EC", "EN"};
+  static const char *const green[] = {"IC", "TLK", "EX", "IR"};
+  for (size_t k = 0; k < 4; k++) {
+    if (strcasecmp(prefix, blue[k]) == 0) {
+      *out = PBL_IF_COLOR_ELSE(COL_PREMIUM_BLUE, GColorBlack);
+      return true;
+    }
+  }
+  for (size_t k = 0; k < 4; k++) {
+    if (strcasecmp(prefix, green[k]) == 0) {
+      *out = PBL_IF_COLOR_ELSE(COL_CAT_GREEN, GColorBlack);
+      return true;
+    }
+  }
+  *out = PBL_IF_COLOR_ELSE(COL_CAT_ORANGE, GColorBlack);
+  return true;
+}
 
 
 static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
@@ -50,14 +87,41 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
   switch (cell_index->section) {
     case 0:
     {
-      char combined_text[32];
+      char time_run[16], delay_run[16], rest_run[32];
       int index = cell_index->row;
 
       APP_LOG(APP_LOG_LEVEL_INFO, s_departures[index].timestamp);
 
-      snprintf(combined_text, sizeof(combined_text), "%s +%s %s/%s %s", s_departures[index].timestamp, s_departures[index].delay, s_departures[index].platform, s_departures[index].track, s_departures[index].trainCode);
+      snprintf(time_run, sizeof(time_run), "%s ", s_departures[index].timestamp);
+      snprintf(delay_run, sizeof(delay_run), "+%s ", s_departures[index].delay);
+      snprintf(rest_run, sizeof(rest_run), "%s/%s %s", s_departures[index].platform, s_departures[index].track, s_departures[index].trainCode);
 
-      menu_cell_basic_draw(ctx, cell_layer, s_departures[index].arrivalStation, combined_text, NULL);
+      // Delay severity: up to 5 min gray (status quo), up to 15 min
+      // orange, above 15 min red. 1-bit keeps the plain gray line.
+      const int delay_min = atoi(s_departures[index].delay);
+      GColor delay_color = GColorDarkGray;
+      if (delay_min > 15) {
+        delay_color = PBL_IF_COLOR_ELSE(COL_DELAY_RED, GColorDarkGray);
+      } else if (delay_min > 5) {
+        delay_color = PBL_IF_COLOR_ELSE(COL_CAT_ORANGE, GColorDarkGray);
+      }
+
+      const MenuTextRun runs[] = {
+          {time_run, GColorDarkGray},
+          {delay_run, delay_color},
+          {rest_run, GColorDarkGray},
+      };
+
+      GColor cat_color;
+      const bool colored =
+          prv_category_color(s_departures[index].trainCode, &cat_color);
+      // Only the destination name carries the category color; the detail
+      // line stays gray apart from the severity-colored delay.
+      menu_list_cell_draw_runs(ctx, cell_layer,
+                          s_departures[index].arrivalStation, runs, 3,
+                          colored ? cat_color : GColorBlack, true,
+                          menu_layer_is_index_selected(s_departures_menu_layer,
+                                                       cell_index));
       break;
     }
   }
@@ -65,6 +129,14 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 
 static void menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
 }
+
+#ifdef PBL_RECT
+static int16_t get_cell_height_rect_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
+  // Exact height of the two text lines drawn by the shared row renderer
+  // (same as the stations list: big top-aligned title, no empty strip).
+  return menu_list_cell_height();
+}
+#endif
 
 #ifdef PBL_ROUND 
 static int16_t get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) { 
@@ -91,6 +163,13 @@ static void prv_window_load(Window *window) {
   custom_status_bar = custom_status_bar_layer_create(BAR_HEIGHT, GColorBlack, ICON_WIDTH_HEIGHT);
   s_departures_menu_layer = menu_layer_create(GRect(0, BAR_HEIGHT, bounds.size.w, bounds.size.h - BAR_HEIGHT));
 
+  // MenuLayer paints its own default (black) highlight bar before calling
+  // draw_row, which flashes during scrolling under our category-colored
+  // bars. Make the built-in highlight transparent; the row renderer paints
+  // the selection itself.
+  menu_layer_set_highlight_colors(s_departures_menu_layer, GColorClear,
+                                  GColorWhite);
+
   menu_layer_set_callbacks(s_departures_menu_layer, NULL, (MenuLayerCallbacks){
     .get_num_sections = menu_get_num_sections_callback,
     .get_num_rows = menu_get_num_rows_callback,
@@ -98,7 +177,7 @@ static void prv_window_load(Window *window) {
     .draw_header = PBL_IF_RECT_ELSE(menu_draw_header_callback, NULL),
     .draw_row = menu_draw_row_callback,
     .select_click = menu_select_callback,
-    .get_cell_height = PBL_IF_ROUND_ELSE(get_cell_height_callback, NULL),
+    .get_cell_height = PBL_IF_ROUND_ELSE(get_cell_height_callback, get_cell_height_rect_callback),
   });
 
   menu_layer_set_click_config_onto_window(s_departures_menu_layer, window);
