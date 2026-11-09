@@ -21,4 +21,14 @@
 
 The app shows the closest stations and departures with delays, platform and track numbers. It primarily uses the custom backend in `rozklad_backend/` directory, which serves the data from the official [PKP PLK PDP API](https://pdp-api.plk-sa.pl/swagger/index.html), and falls back to the unofficial [API Bilkom](https://kalkulatorkolejowy.pl/bilkom) when the custom backend is unreachable or does not know a station. The app bases on [PebbleRail](https://github.com/jccit/pebblerail).
 
-[Link to the Rebble Store](https://apps.rebble.io/en_US/application/68a759a7652aec0009f26c41)
+Get it on the new official Pebble Appstore:
+
+[![RePebble](https://img.shields.io/badge/RePebble-Download-EA4335?style=for-the-badge)](https://apps.repebble.com/68a759a7652aec0009f26c41)
+![RePebble likes](https://img.shields.io/badge/likes-%E2%9D%A4%2017-brightgreen?style=for-the-badge)
+
+Also available on the Rebble Store:
+
+[![Rebble Store](https://img.shields.io/badge/Rebble%20Store-Download-0A7EA3?style=for-the-badge)](https://apps.rebble.io/en_US/application/68a759a7652aec0009f26c41)
+![Rebble likes](https://img.shields.io/badge/likes-%E2%9D%A4%208-brightgreen?style=for-the-badge)
+
+_Like counts as of 2026-11-09._
