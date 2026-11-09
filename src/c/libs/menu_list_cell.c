@@ -28,10 +28,11 @@ static int16_t run_advance(GFont font, const char *text) {
 
 int16_t menu_list_cell_height(void) {
   const GRect dummy = { {0, 0}, {144, 1000} };
-  GFont title_font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
-  GFont subtitle_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+  GFont title_font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+  GFont subtitle_font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+  // Tight: just a hairline between stacked rows, no dead strip anywhere.
   return single_line_height(title_font, dummy) +
-         single_line_height(subtitle_font, dummy) + 3;
+         single_line_height(subtitle_font, dummy);
 }
 
 void menu_list_cell_draw_runs(GContext *ctx, const Layer *cell_layer,
@@ -59,11 +60,10 @@ void menu_list_cell_draw_runs(GContext *ctx, const Layer *cell_layer,
   title_font = fonts_get_system_font(
       selected ? FONT_KEY_GOTHIC_24_BOLD : FONT_KEY_GOTHIC_20_BOLD);
 #else
-  title_font = fonts_get_system_font(big_title ? FONT_KEY_GOTHIC_24_BOLD
+  title_font = fonts_get_system_font(big_title ? FONT_KEY_GOTHIC_28_BOLD
                                                : FONT_KEY_GOTHIC_18_BOLD);
 #endif
-  GFont subtitle_font = fonts_get_system_font(
-      PBL_IF_ROUND_ELSE(FONT_KEY_GOTHIC_18, FONT_KEY_GOTHIC_14));
+  GFont subtitle_font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
 
   const int16_t title_height = single_line_height(title_font, text);
   const int16_t subtitle_height = single_line_height(subtitle_font, text);
@@ -71,7 +71,7 @@ void menu_list_cell_draw_runs(GContext *ctx, const Layer *cell_layer,
 #if PBL_RECT
   // Big rows are top-aligned (stock-menu look, no empty strip above the
   // title); stock-sized rows stay vertically centered like system cells.
-  int16_t y = text.origin.y;
+  int16_t y = text.origin.y - (big_title ? 2 : 0);
   if (!big_title) {
     y = text.origin.y +
         (int16_t)(text.size.h - (title_height + subtitle_height)) / 2;
