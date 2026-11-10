@@ -61,3 +61,4 @@ backend/app/__pycache__
 docs/openapi.yaml
 scripts/railway-stations_org.json
 scripts/stations.json
+DEVSETUP.md

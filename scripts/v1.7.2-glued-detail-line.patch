@@ -1,0 +1,26 @@
+diff --git a/src/c/windows/departures_screen.c b/src/c/windows/departures_screen.c
+index 325e843..41cb9fe 100644
+--- a/src/c/windows/departures_screen.c
++++ b/src/c/windows/departures_screen.c
+@@ -55,7 +55,20 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
+ 
+       APP_LOG(APP_LOG_LEVEL_INFO, s_departures[index].timestamp);
+ 
+-      snprintf(combined_text, sizeof(combined_text), "%s +%s %s/%s %s", s_departures[index].timestamp, s_departures[index].delay, s_departures[index].platform, s_departures[index].track, s_departures[index].trainCode);
++      // Glued detail line (user 2026-11-09): no space before the delay and
++      // no space between carrier prefix and train number ("16:05+12 3/5IC3514").
++      char code_only[32];
++      {
++        size_t o = 0;
++        for (size_t i = 0; s_departures[index].trainCode[i] != '\0'; i++) {
++          const char c = s_departures[index].trainCode[i];
++          if (c != ' ' && o + 1 < sizeof(code_only)) {
++            code_only[o++] = c;
++          }
++        }
++        code_only[o] = '\0';
++      }
++      snprintf(combined_text, sizeof(combined_text), "%s+%s %s/%s %s", s_departures[index].timestamp, s_departures[index].delay, s_departures[index].platform, s_departures[index].track, code_only);
+ 
+       menu_cell_basic_draw(ctx, cell_layer, s_departures[index].arrivalStation, combined_text, NULL);
+       break;

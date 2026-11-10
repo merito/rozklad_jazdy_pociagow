@@ -87,14 +87,38 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
   switch (cell_index->section) {
     case 0:
     {
-      char time_run[16], delay_run[16], rest_run[32];
+      char time_run[16], delay_run[16], rest_run[48], code_run[50];
       int index = cell_index->row;
 
       APP_LOG(APP_LOG_LEVEL_INFO, s_departures[index].timestamp);
 
+      // Carrier badge reads as one token: drop the space between the
+      // carrier prefix and the train number ("IC 3514" -> "IC3514").
+      // Emery keeps the spaced layout (user 2026-11-09): "IC 3514" and
+      // "16:05 +12"; basalt stays glued ("IC3514", "16:05+12").
+      {
+        size_t o = 0;
+        for (size_t i = 0; s_departures[index].trainCode[i] != '\0'; i++) {
+          const char c = s_departures[index].trainCode[i];
+#if !defined(PBL_PLATFORM_EMERY)
+          if (c == ' ') {
+            continue;
+          }
+#endif
+          if (o + 1 < sizeof(code_run)) {
+            code_run[o++] = c;
+          }
+        }
+        code_run[o] = '\0';
+      }
+
+#if defined(PBL_PLATFORM_EMERY)
       snprintf(time_run, sizeof(time_run), "%s ", s_departures[index].timestamp);
+#else
+      snprintf(time_run, sizeof(time_run), "%s", s_departures[index].timestamp);
+#endif
       snprintf(delay_run, sizeof(delay_run), "+%s ", s_departures[index].delay);
-      snprintf(rest_run, sizeof(rest_run), "%s/%s %s", s_departures[index].platform, s_departures[index].track, s_departures[index].trainCode);
+      snprintf(rest_run, sizeof(rest_run), "%s/%s %s", s_departures[index].platform, s_departures[index].track, code_run);
 
       // Delay severity: up to 5 min gray (status quo), up to 15 min
       // orange, above 15 min red. 1-bit keeps the plain gray line.
