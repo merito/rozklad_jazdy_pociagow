@@ -1,8 +1,10 @@
 {
   "name": "rozklad_jazdy_pociagow",
   "author": "merito",
-  "version": "1.7.1",
-  "keywords": ["pebble-app"],
+  "version": "1.8.0",
+  "keywords": [
+    "pebble-app"
+  ],
   "private": true,
   "dependencies": {},
   "pebble": {
@@ -45,6 +47,8 @@
         }
       ]
     },
-    "capabilities": ["location"]
+    "capabilities": [
+      "location"
+    ]
   }
 }
