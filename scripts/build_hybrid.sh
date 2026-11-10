@@ -64,15 +64,27 @@ cp "$WT/build/$(basename "$WT").pbw" "$OLD"
 # 3) Merge: appinfo + JS bundle from the branch, binaries per platform.
 mkdir -p "$(dirname "$OUT")"
 python3 - /tmp/pbw-head.hybrid "$OLD" "$OUT" <<'PY'
-import sys, zipfile, hashlib
+import sys, zipfile, hashlib, json
 head_p, old_p, out_p = sys.argv[1:4]
 head = zipfile.ZipFile(head_p)
 old = zipfile.ZipFile(old_p)
 LEGACY = ('aplite', 'diorite', 'flint')
+ALL_PLATFORMS = ['aplite', 'basalt', 'diorite', 'emery', 'flint']
 with zipfile.ZipFile(out_p, 'w', zipfile.ZIP_DEFLATED) as out:
     for n in head.namelist():
         if n.split('/')[0] not in LEGACY:
-            out.writestr(n, head.read(n))
+            data = head.read(n)
+            if n == 'appinfo.json':
+                # Head was built with a restricted package.json; the merged
+                # package must declare every platform whose binary ships.
+                ai = json.loads(data)
+                if 'targetPlatforms' in ai:
+                    ai['targetPlatforms'] = ALL_PLATFORMS
+                for v in ai.values():
+                    if isinstance(v, dict) and 'targetPlatforms' in v:
+                        v['targetPlatforms'] = ALL_PLATFORMS
+                data = json.dumps(ai).encode()
+            out.writestr(n, data)
     for n in old.namelist():
         if n.split('/')[0] in LEGACY:
             out.writestr(n, old.read(n))
@@ -80,7 +92,13 @@ with zipfile.ZipFile(out_p, 'w', zipfile.ZIP_DEFLATED) as out:
 z = zipfile.ZipFile(out_p)
 assert z.testzip() is None
 plats = sorted({n.split('/')[0] for n in z.namelist() if '/' in n})
-assert plats == ['aplite', 'basalt', 'diorite', 'emery', 'flint'], plats
+assert plats == ALL_PLATFORMS, plats
+ai = json.loads(z.read('appinfo.json'))
+for tp in [ai.get('targetPlatforms')] + [
+        v['targetPlatforms'] for v in ai.values()
+        if isinstance(v, dict) and 'targetPlatforms' in v]:
+    if tp is not None:
+        assert sorted(tp) == ALL_PLATFORMS, tp
 def md5(zf, n): return hashlib.md5(zf.read(n)).hexdigest()
 for pf, src in [('flint', old), ('aplite', old), ('diorite', old),
                 ('basalt', head), ('emery', head)]:
