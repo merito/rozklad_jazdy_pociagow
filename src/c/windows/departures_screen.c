@@ -123,17 +123,17 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
       // Delay severity: up to 5 min gray (status quo), up to 15 min
       // orange, above 15 min red. 1-bit keeps the plain gray line.
       const int delay_min = atoi(s_departures[index].delay);
-      GColor delay_color = GColorDarkGray;
+      GColor delay_color = COL_TEXT_DIM;
       if (delay_min > 15) {
-        delay_color = PBL_IF_COLOR_ELSE(COL_DELAY_RED, GColorDarkGray);
+        delay_color = PBL_IF_COLOR_ELSE(COL_DELAY_RED, GColorBlack);
       } else if (delay_min > 5) {
-        delay_color = PBL_IF_COLOR_ELSE(COL_CAT_ORANGE, GColorDarkGray);
+        delay_color = PBL_IF_COLOR_ELSE(COL_CAT_ORANGE, GColorBlack);
       }
 
       const MenuTextRun runs[] = {
-          {time_run, GColorDarkGray},
+          {time_run, COL_TEXT_DIM},
           {delay_run, delay_color},
-          {rest_run, GColorDarkGray},
+          {rest_run, COL_TEXT_DIM},
       };
 
       GColor cat_color;

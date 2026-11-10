@@ -8,3 +8,5 @@
 #define COL_CAT_GREEN GColorFromRGB(0, 107, 0)
 #define COL_CAT_ORANGE GColorFromRGB(186, 69, 0)
 #define COL_DELAY_RED GColorFromRGB(198, 0, 0)
+// Detail-line body text: very dark gray, almost black (1-bit keeps black).
+#define COL_TEXT_DIM PBL_IF_COLOR_ELSE(GColorFromRGB(26, 26, 26), GColorBlack)

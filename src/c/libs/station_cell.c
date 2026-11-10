@@ -28,5 +28,5 @@ void station_cell_draw(GContext *ctx, const Layer *cell_layer,
   }
 
   menu_list_cell_draw(ctx, cell_layer, title, data->distance, title_color,
-                      GColorDarkGray, true, selected);
+                      COL_TEXT_DIM, true, selected);
 }
