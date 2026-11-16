@@ -29,6 +29,6 @@ Get it on the new official Pebble Appstore:
 Also available on the Rebble Store:
 
 [![Rebble Store](https://img.shields.io/badge/Rebble%20Store-Download-0A7EA3?style=for-the-badge)](https://apps.rebble.io/en_US/application/68a759a7652aec0009f26c41)
-![Rebble likes](https://img.shields.io/badge/likes-%E2%9D%A4%208-brightgreen?style=for-the-badge)
+![Rebble likes](https://img.shields.io/badge/likes-%E2%9D%A4%209-brightgreen?style=for-the-badge)
 
-_Like counts as of 2026-11-09._
+_Like counts as of 2026-11-16._
