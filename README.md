@@ -6,16 +6,16 @@
     <th>Flint (Pebble 2) — departures</th>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/stations_flint@2x.png" alt="Nearest stations on Flint" width="288"></td>
-    <td><img src="docs/screenshots/departures_flint@2x.png" alt="Departures on Flint" width="288"></td>
+    <td><img src="docs/screenshots/store/screenshot_flint_0.png" alt="Nearest stations on Flint" width="288"></td>
+    <td><img src="docs/screenshots/store/screenshot_flint_1.png" alt="Departures on Flint" width="288"></td>
   </tr>
   <tr>
     <th>Emery (Pebble 3) — nearest stations</th>
     <th>Emery (Pebble 3) — departures</th>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/stations_emery@2x.png" alt="Nearest stations on Emery" width="400"></td>
-    <td><img src="docs/screenshots/departures_emery@2x.png" alt="Departures on Emery" width="400"></td>
+    <td><img src="docs/screenshots/store/screenshot_emery_0.png" alt="Nearest stations on Emery" width="400"></td>
+    <td><img src="docs/screenshots/store/screenshot_emery_1.png" alt="Departures on Emery" width="400"></td>
   </tr>
 </table>
 
